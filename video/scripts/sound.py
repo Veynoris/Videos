@@ -322,12 +322,19 @@ mix.add(secs(H + 24) - 0.7, reverse_swell(0.7), -21)
 mix.add(secs(H + 24), thud(0.8, 2.0, 0.28), -17)
 mix.add(secs(H + 24), air_ring(1.4, 0.2, 0.8), -26)                    # the ring: present but soft
 mix.add(secs(H + 34), sand(1.3, 0.2, 0.8, seed=2), -28)
+mix.add(secs(H + 2), whoosh(1.0, 0.9, 0.3, 500, 3200, 0.8), -25)     # crescent sweeps in on its arc
+mix.add(secs(H + 22), sand(0.9, 0.9, -0.2, density=520, seed=13), -27) # anamorphic flare across the frame
 mix.add(secs(H + 32), whoosh(0.8, -0.4, 0.3, 300, 2000), -27)          # "The Qur'an didn't say 309."
+mix.add(secs(H + 56), swell(0.45, 1200, 4200, 0.2, 0.3), -29)          # the strike of light through 309
 mix.add(secs(H + 70), swell(0.6, 400, 1500, 0.2, 0.2), -30)            # line dissolves
 mix.add(secs(H + 80), whoosh(0.8, 0.4, -0.3, 300, 2000), -27)          # "It said 300... and 9."
 mix.add(secs(H + 118), thud(0.6, 1.8, 0.35), -21)                      # "One number. Two calendars."
 mix.add(secs(H + 116), swell(1.8, 140, 900, 0.35), -25)
 mix.add(secs(H + 140), sand(1.6, -0.5, 0.5, seed=3), -28)
+mix.add(secs(H + 142), swell(1.0, 600, 2600, 0.3), -30)               # gold rule drawn outward
+HE = T["hook"][1]
+mix.add(secs(HE - 26), noise_riser(26 / FPS, top=0.6), -22)           # camera dives into the sun
+mix.add(secs(HE - 6), swell(2.2, 120, 1400, 0.12), -22)               # its light opens into the verse
 
 # VERSE — the card tilts up; the two phrases are swept with light.
 mix.add(secs(V - 12), whoosh(1.3, -0.6, 0.6, 220, 2200), -21)

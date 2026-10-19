@@ -4,6 +4,7 @@ import { BlurWords, Mono } from "../components/Text";
 import { Orbits } from "../components/Orbits";
 import { YearGrids } from "../components/YearGrids";
 import { Shockwave } from "../components/Orb";
+import { Flare } from "../components/Light";
 import { CLAMP, easeInOut, focusIn, progress } from "../lib/anim";
 import { LUNAR_YEAR, SOLAR_YEAR, SPAN_DAYS } from "../lib/astro";
 import { C, F } from "../lib/theme";
@@ -40,6 +41,8 @@ export const TwoYears: React.FC = () => {
       <div style={{ ...center, top: 640 }}>
         <Orbits d={d} appear={progress(f, 36, 30)} moonDone={moonDone} sunDone={sunDone} gap={gap} />
       </div>
+      <Flare cx={790} cy={640 + 82} p={interpolate(f, [moonDoneAt - 2, moonDoneAt + 4, moonDoneAt + 40], [0, 0.8, 0], CLAMP)} color={C.moon} width={900} />
+      <Flare cx={290} cy={640 + 82} p={interpolate(f, [SUN_DONE - 2, SUN_DONE + 4, SUN_DONE + 40], [0, 0.8, 0], CLAMP)} color={C.sun} width={900} />
       <div style={{ ...center, top: 1180, gap: 0 }}>
         <div style={{ width: 500, ...focusIn(progress(f, 46, 24), 8, 8) }}>
           <Mono style={{ color: C.sun }}>By the sun</Mono>
@@ -102,6 +105,7 @@ export const Centuries: React.FC = () => {
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
         <Shockwave cx={675} cy={945} p={interpolate(f, [done, done + 50], [0, 1], { ...CLAMP, easing: easeInOut })} color={C.moon} max={600} />
       </svg>
+      <Flare cx={675} cy={945} p={interpolate(f, [done, done + 6, done + 50], [0, 0.9, 0], CLAMP)} color={C.moon} />
       <div
         style={{
           position: "absolute",
@@ -120,10 +124,10 @@ export const Centuries: React.FC = () => {
         </Mono>
       </div>
       <div style={{ ...center, top: 1280, flexDirection: "column", alignItems: "center", gap: 18 }}>
-        <Mono p={progress(f, done + 60, 24)} style={{ fontSize: 20, color: C.ink }}>
+        <Mono p={progress(f, done + 60, 24)} style={{ fontSize: 23, color: C.ink }}>
           300 solar years = 309.2 lunar years
         </Mono>
-        <Mono p={progress(f, done + 74, 24)} style={{ fontSize: 18 }}>
+        <Mono p={progress(f, done + 74, 24)} style={{ fontSize: 21 }}>
           Close, not exact · about 73 days apart
         </Mono>
       </div>

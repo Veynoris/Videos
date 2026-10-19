@@ -8,6 +8,7 @@ import { Sky } from "./scenes/Sky";
 import { Centuries, TwoYears } from "./scenes/Calendars";
 import { NextVerse, Outro, Scholar } from "./scenes/Closing";
 import { CLAMP } from "./lib/anim";
+import { Bloom } from "./components/Light";
 
 import timeline from "./timeline.json";
 
@@ -26,13 +27,15 @@ export const Episode: React.FC = () => {
   return (
     <AbsoluteFill>
       <Backdrop sun={sun} moon={moon} rays={rays} />
-      <Scene from={T.hook[0]} to={T.hook[1]}><Hook /></Scene>
+      <Scene from={T.hook[0]} to={T.hook[1]}><Hook dur={T.hook[1] - T.hook[0]} /></Scene>
       <Scene from={T.verse[0]} to={T.verse[1]}><Verse /></Scene>
       <Scene from={T.sky[0]} to={T.sky[1]} exit={26}><Sky dur={T.sky[1] - T.sky[0]} /></Scene>
       <Scene from={T.years[0]} to={T.years[1]}><TwoYears /></Scene>
       <Scene from={T.cent[0]} to={T.cent[1]}><Centuries /></Scene>
       <Scene from={T.scholar[0]} to={T.scholar[1]}><Scholar /></Scene>
       <Scene from={T.next[0]} to={T.next[1]}><NextVerse /></Scene>
+      {/* light transition: the camera dives into the sun and its light becomes the verse scene */}
+      <Bloom p={interpolate(f, [T.hook[1] - 22, T.hook[1] - 4, T.hook[1] + 22], [0, 0.85, 0], CLAMP)} cx={430} cy={800} />
       <Scene from={T.outro[0]} to={T.outro[1]} exit={0}><Outro total={T.outro[1] - T.outro[0]} /></Scene>
     </AbsoluteFill>
   );

@@ -3,6 +3,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { ArabicWords, BlurWords, Mono } from "../components/Text";
 import { Card } from "../components/Card";
 import { Orb, Shockwave } from "../components/Orb";
+import { Bloom, Flare, Rosette, StarMark } from "../components/Light";
 import { CLAMP, easeInOut, focusIn, progress } from "../lib/anim";
 import { C, F } from "../lib/theme";
 
@@ -16,8 +17,12 @@ export const Scholar: React.FC = () => {
       <div style={{ ...center, top: 285 }}>
         <BlurWords start={6} tokens={[{ t: "Explained" }, { t: "over 650 years ago.", italic: true, color: C.sun }]} />
       </div>
+      <Rosette cx={540} cy={820} r={500} opacity={progress(f, 10, 60) * 0.06} speed={-0.05} />
       <div style={{ ...center, top: 520 }}>
         <Card p={progress(f, 22, 34)}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            <StarMark size={28} p={progress(f, 30, 20)} />
+          </div>
           <Mono p={progress(f, 34, 20)} style={{ color: C.sun }}>
             Ibn Kathīr · d. 774 AH / 1373 CE
           </Mono>
@@ -47,7 +52,7 @@ export const Scholar: React.FC = () => {
               ]}
             />
           </div>
-          <Mono p={progress(f, 120, 20)} style={{ marginTop: 32, fontSize: 18 }}>
+          <Mono p={progress(f, 120, 20)} style={{ marginTop: 32, fontSize: 21 }}>
             Tafsīr Ibn Kathīr · on 18:25 · translated
           </Mono>
         </Card>
@@ -56,7 +61,7 @@ export const Scholar: React.FC = () => {
         <div
           style={{
             fontFamily: F.serif,
-            fontSize: 31,
+            fontSize: 34,
             lineHeight: 1.4,
             color: C.dim,
             textAlign: "center",
@@ -79,8 +84,14 @@ export const NextVerse: React.FC = () => {
       <div style={{ ...center, top: 520 }}>
         <Mono p={progress(f, 4, 20)}>The very next verse · 18:26</Mono>
       </div>
+      <Rosette cx={540} cy={760} r={470} opacity={progress(f, 0, 50) * 0.08} speed={0.07} />
       <div style={{ ...center, top: 620 }}>
-        <ArabicWords start={14} stagger={7} size={124} tokens={[{ t: "قُلِ ٱللَّهُ أَعۡلَمُ بِمَا لَبِثُواْۖ" }]} />
+        <ArabicWords
+          start={14}
+          stagger={7}
+          size={124}
+          tokens={[{ t: "قُلِ ٱللَّهُ أَعۡلَمُ بِمَا لَبِثُواْۖ", color: "#ECE6DA", sweep: interpolate(f, [60, 130], [0, 1], CLAMP), glow: "rgba(236,214,170,0.35)" }]}
+        />
       </div>
       <div style={{ ...center, top: 930 }}>
         <BlurWords
@@ -90,7 +101,7 @@ export const NextVerse: React.FC = () => {
         />
       </div>
       <div style={{ ...center, top: 1110 }}>
-        <Mono p={progress(f, 84, 20)} style={{ fontSize: 18 }}>
+        <Mono p={progress(f, 84, 20)} style={{ fontSize: 21 }}>
           Sahih International · opening of 18:26
         </Mono>
       </div>
@@ -98,45 +109,61 @@ export const NextVerse: React.FC = () => {
   );
 };
 
-// 9 — Outro: sun and moon converge into one light; rays open; sign-off.
+// 9 — Outro: the moon glides across the sun into a total eclipse; the corona blazes,
+// a diamond-ring flash fires at the rim, then the closing lines.
 export const Outro: React.FC<{ total: number }> = ({ total }) => {
   const f = useCurrentFrame();
-  const meet = interpolate(f, [4, 74], [0, 1], { ...CLAMP, easing: easeInOut });
-  const sep = 120 * (1 - meet);
-  const burst = interpolate(f, [70, 130], [0, 1], { ...CLAMP, easing: easeInOut });
-  const rays = interpolate(f, [70, 120], [0, 1], CLAMP);
+  const SX = 540, SY = 600, R = 64;
+  const glide = interpolate(f, [0, 74], [0, 1], { ...CLAMP, easing: easeInOut });
+  const mx = SX + 260 * (1 - glide);
+  const my = SY - 70 * (1 - glide);
+  const totality = progress(f, 66, 20);
+  const corona = interpolate(f, [70, 110], [0, 1], { ...CLAMP, easing: easeInOut });
+  const diamond = interpolate(f, [72, 78, 120], [0, 1, 0], CLAMP);
+  const burst = interpolate(f, [74, 134], [0, 1], { ...CLAMP, easing: easeInOut });
   const fadeAll = interpolate(f, [total - 26, total], [1, 0], CLAMP);
   return (
     <AbsoluteFill style={{ opacity: fadeAll }}>
       <AbsoluteFill
         style={{
-          opacity: rays * 0.5,
-          background: `repeating-conic-gradient(from ${f * 0.25}deg at 540px 620px, rgba(233,200,140,0.10) 0deg 3deg, transparent 3deg 14deg)`,
-          WebkitMaskImage: "radial-gradient(520px 520px at 540px 620px, black 0%, transparent 100%)",
-          maskImage: "radial-gradient(520px 520px at 540px 620px, black 0%, transparent 100%)",
+          opacity: corona * 0.55,
+          background: `repeating-conic-gradient(from ${f * 0.2}deg at ${SX}px ${SY}px, rgba(233,200,140,0.12) 0deg 2.5deg, transparent 2.5deg 11deg)`,
+          WebkitMaskImage: `radial-gradient(560px 560px at ${SX}px ${SY}px, black 0%, transparent 100%)`,
+          maskImage: `radial-gradient(560px 560px at ${SX}px ${SY}px, black 0%, transparent 100%)`,
         }}
       />
-      <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: progress(f, 0, 24) }}>
-        <Shockwave cx={540} cy={620} p={burst} color={C.sun} max={560} />
-        <Orb id="endsun" cx={540 - sep} cy={620} r={26} color={C.sun} intensity={1 + rays * 0.6} />
-        <g style={{ mixBlendMode: "screen" }}>
-          <Orb id="endmoon" cx={540 + sep} cy={620} r={22} color={C.moon} intensity={1 + rays * 0.6} />
-        </g>
+      <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: progress(f, 0, 20) }}>
+        <defs>
+          <radialGradient id="corona">
+            <stop offset="45%" stopColor="#FFF4DC" stopOpacity={0} />
+            <stop offset="52%" stopColor="#FFF4DC" stopOpacity={0.95} />
+            <stop offset="62%" stopColor={C.sun} stopOpacity={0.55} />
+            <stop offset="100%" stopColor={C.sun} stopOpacity={0} />
+          </radialGradient>
+        </defs>
+        <Shockwave cx={SX} cy={SY} p={burst} color={C.sun} max={560} />
+        <circle cx={SX} cy={SY} r={R * 2.6} fill="url(#corona)" opacity={corona} />
+        <Orb id="eclsun" cx={SX} cy={SY} r={R} color={C.sun} intensity={1 - totality * 0.5} />
+        <circle cx={mx} cy={my} r={R * 1.02} fill="#070C18" stroke={C.moon} strokeWidth={1.5} strokeOpacity={0.5 + totality * 0.3} />
       </svg>
-      <div style={{ ...center, top: 800 }}>
+      <Flare cx={SX + R * 0.72} cy={SY - R * 0.7} p={diamond} color="#FFF4DC" />
+      <Bloom p={diamond * 0.35} cx={SX} cy={SY} />
+      <div style={{ ...center, top: 820 }}>
         <BlurWords
-          start={60}
+          start={84}
           stagger={6}
           dur={24}
-          tokens={[{ t: "Three hundred —" }, { br: true, t: "" }, { t: "and nine.", italic: true, color: C.moon, glow: C.moonGlow }]}
-          style={{ fontSize: 92 }}
+          tokens={[{ t: "Three hundred —" }, { br: true, t: "" }, { t: "and nine.", italic: true, color: C.moon, glow: C.moonGlow, sweep: interpolate(f, [120, 170], [0, 1], CLAMP) }]}
+          style={{ fontSize: 96 }}
         />
       </div>
-      <div style={{ ...center, top: 1090 }}>
-        <BlurWords start={100} tokens={[{ t: "Read al-Kahf 18:25–26 slowly." }]} style={{ fontSize: 40, color: C.dim }} />
+      <div style={{ ...center, top: 1110 }}>
+        <BlurWords start={116} tokens={[{ t: "Read al-Kahf 18:25–26 slowly." }]} style={{ fontSize: 42, color: C.dim }} />
       </div>
-      <div style={{ ...center, top: 1460 }}>
-        <Mono p={progress(f, 122, 24)}>Why nine?</Mono>
+      <div style={{ ...center, top: 1440, alignItems: "center", gap: 18 }}>
+        <StarMark size={20} p={progress(f, 132, 24)} />
+        <Mono p={progress(f, 132, 24)} style={{ color: C.ink }}>Quran Decoding</Mono>
+        <StarMark size={20} p={progress(f, 132, 24)} />
       </div>
     </AbsoluteFill>
   );

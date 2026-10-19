@@ -74,7 +74,7 @@ const Orbit: React.FC<OrbitProps> = ({ cx, cy, frac, color, glow, days, appear, 
       <text x={cx} y={cy - 6} textAnchor="middle" fill={C.ink} style={{ fontFamily: F.serif, fontSize: 72, fontVariantNumeric: "tabular-nums" }}>
         {Math.floor(days)}
       </text>
-      <text x={cx} y={cy + 40} textAnchor="middle" fill={C.dim} style={{ fontFamily: F.mono, fontSize: 18, letterSpacing: "0.3em" }}>
+      <text x={cx} y={cy + 40} textAnchor="middle" fill={C.dim} style={{ fontFamily: F.mono, fontSize: 21, letterSpacing: "0.3em" }}>
         DAYS
       </text>
     </g>

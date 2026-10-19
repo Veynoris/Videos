@@ -22,9 +22,12 @@ const Exit: React.FC<{ dur: number; exit: number; children: React.ReactNode }> =
   const p = exit > 0 ? progress(f, dur - exit, exit, easeIn) : 0;
   // Slow, continuous push-in so no beat is ever a static slide (reference A).
   const push = 1 + 0.035 * (f / dur);
+  const dx = Math.sin(f / 70) * 6;
+  const dy = Math.cos(f / 85) * 5;
+  const rot = Math.sin(f / 110) * 0.22;
   const out = focusOut(p);
   return (
-    <AbsoluteFill style={{ ...out, transform: `scale(${push * (1 - p * 0.06)})` }}>
+    <AbsoluteFill style={{ ...out, transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(${push * (1 - p * 0.06)})` }}>
       {children}
     </AbsoluteFill>
   );
