@@ -346,8 +346,8 @@ mix.add(secs(H + 62), whoosh(0.8, -0.4, 0.3, 300, 2000), -28)          # "...and
 for k in range(9):                                                     # 301 ... 309, one year at a time
     mix.add(secs(H + HK_NINE + k * HK_STEP), pebble(0.1 + k * 0.07, seed=200 + k), -24)
 mix.add(secs(H + 98), swell(1.2, 500, 2400, 0.2, 0.5), -28)            # "...or was it 309?"
-mix.add(secs(H + 138), thud(0.6, 1.8, 0.35), -21)                      # "The Qur'an gives both numbers"
-mix.add(secs(H + 140), swell(1.8, 140, 900, 0.35), -26)
+mix.add(secs(H + 126), thud(0.6, 1.8, 0.35), -21)                      # "The Qur'an gives both numbers"
+mix.add(secs(H + 128), swell(1.8, 140, 900, 0.35), -26)
 mix.add(secs(H + 150), sand(1.6, -0.5, 0.5, seed=3), -29)
 HE = T["hook"][1]
 mix.add(secs(HE - 24), noise_riser(24 / FPS, top=0.6), -23)           # push forward into the light

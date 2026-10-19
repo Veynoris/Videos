@@ -57,7 +57,7 @@ export const Hook: React.FC<{ dur: number }> = ({ dur }) => {
   const A = 1 - progress(f, 50, 12);
   const B = progress(f, 62, 14) * (1 - progress(f, 88, 10));
   const dive = interpolate(f, [dur - 24, dur], [1, 1.6], { ...CLAMP, easing: easeIn });
-  const sweepFinal = interpolate(f, [150, 200], [0, 1], CLAMP);
+  const sweepFinal = interpolate(f, [150, 210], [0, 1], CLAMP);
   const isMoon = years > 300;
   return (
     <AbsoluteFill>
@@ -130,8 +130,8 @@ export const Hook: React.FC<{ dur: number }> = ({ dur }) => {
         </div>
         <div style={{ ...center, top: 1110 }}>
           <BlurWords
-            start={140}
-            stagger={4}
+            start={128}
+            stagger={3}
             dur={20}
             tokens={[{ t: "The Qur'an gives both numbers" }, { br: true, t: "" }, { t: "— in one sentence.", italic: true, color: C.sun, glow: C.sunGlow, sweep: sweepFinal }]}
             style={{ fontSize: 62, lineHeight: 1.2 }}

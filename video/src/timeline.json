@@ -1,11 +1,35 @@
 {
   "_note": "Beat boundaries in frames @30fps. Read by src/Episode.tsx and scripts/sound.py so picture and sound stay locked.",
-  "hook": [0, 200],
-  "verse": [182, 442],
-  "sky": [426, 582],
-  "years": [562, 862],
-  "cent": [846, 1398],
-  "scholar": [1382, 1714],
-  "next": [1698, 1890],
-  "outro": [1874, 2062]
+  "hook": [
+    0,
+    224
+  ],
+  "verse": [
+    206,
+    466
+  ],
+  "sky": [
+    450,
+    606
+  ],
+  "years": [
+    586,
+    886
+  ],
+  "cent": [
+    870,
+    1422
+  ],
+  "scholar": [
+    1406,
+    1738
+  ],
+  "next": [
+    1722,
+    1914
+  ],
+  "outro": [
+    1898,
+    2086
+  ]
 }
