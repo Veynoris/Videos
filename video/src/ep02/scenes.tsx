@@ -251,8 +251,9 @@ export const Decode: React.FC = () => {
           = 8 messages
         </div>
       </div>
-      <div style={{ ...center, top: 1530 }}>
-        <Mono p={progress(f, TOTAL_AT + 24, 20)} style={{ fontSize: 20 }}>The two promises are news and glad tidings at once · al-Marāghī</Mono>
+      <div style={{ ...center, top: 1520, flexDirection: "column", alignItems: "center", gap: 10 }}>
+        <Mono p={progress(f, TOTAL_AT + 24, 20)} style={{ fontSize: 19 }}>The two promises are news</Mono>
+        <Mono p={progress(f, TOTAL_AT + 30, 20)} style={{ fontSize: 19 }}>and glad tidings at once · al-Marāghī</Mono>
       </div>
     </AbsoluteFill>
   );
