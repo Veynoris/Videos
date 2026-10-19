@@ -1,19 +1,21 @@
-# EP04 — caption
+# EP04 — caption (v2)
 
-Hearing. Seeing. As-Samīʿ, al-Baṣīr.
+Ten times the Qur'an puts these two names of Allah side by side — As-Samīʿ, al-Baṣīr. The All-Hearing, the All-Seeing.
 
-Every time these two words sit side by side in the Qur'an, hearing comes first — except once.
+And every single time, hearing comes first.
+4:58 · 4:134 · 17:1 · 22:61 · 22:75 · 31:28 · 40:20 · 40:56 · 42:11 · 58:1
 
-That one exception (Hūd 11:24) isn't about Allah at all. It describes two groups of people: "like the blind and the deaf, and the seeing and the hearing" — the order simply mirrors "the blind and the deaf."
+The tenth is a story. A woman came to the Prophet ﷺ to complain about her husband. ʿĀʾisha was in the same room and said: "Blessed is He whose hearing encompasses all voices… I was in a corner of the house and could not hear what she was saying." (al-Nasāʾī 3460, Ibn Mājah 188 — ṣaḥīḥ)
 
-Whenever Allah describes Himself with these two names together, it is always the same: As-Samīʿ, al-Baṣīr — 10 out of 10.
+Then Allah revealed: "Certainly has Allah heard the speech of the one who argues with you concerning her husband and directs her complaint to Allah. And Allah hears your dialogue; indeed, Allah is Hearing and Seeing." (58:1)
 
-And the most moving of them: "Certainly has Allah heard the speech of the one who argues with you concerning her husband and directs her complaint to Allah." (58:1)
-ʿĀʾisha said: "Blessed is He whose hearing encompasses all voices. She came complaining to the Prophet ﷺ, and I was in a corner of the house — I could not hear what she said." (Ibn Mājah 188, al-Nasāʾī 3460 — ṣaḥīḥ)
+Heard. Hears. All-Hearing. Three times in one verse — then All-Seeing.
 
-Whatever you whisper tonight — "Indeed, I am with you both; I hear and I see." (20:46)
+(The pair appears reversed only once, in 11:24, and there it describes people, not Allah: "like the blind and the deaf, and the seeing and the hearing.")
+
+Whatever you whisper tonight — He hears.
 
 💬 Type "As-Samīʿ" if this reached you.
-🔁 Send it to someone who needs to know they're heard.
+🔁 Send it to someone who feels unheard.
 
 #allah #quran #islam #muslim #dua

@@ -275,6 +275,52 @@ def whirr(seconds, rate_hz, pan, lo=280, hi=900):
     return stereo(norm(x), pan)
 
 
+def clack(weight=1.0, pan=0.0, seed=0):
+    """Mechanical latch: a dry filtered-noise transient over a damped low knock. No ringing body."""
+    r = np.random.default_rng(seed)
+    n = int(0.6 * SR)
+    t = tvec(n)
+    snap = bp(r.standard_normal(n), 900, 4200) * np.exp(-t * 260)
+    knock = lp(r.standard_normal(n), 220, 4) * np.exp(-t * 34) * 0.9 * weight
+    rattle = np.zeros(n)
+    for k in range(3):
+        s0 = int((0.018 + k * 0.021) * SR)
+        g = int(0.006 * SR)
+        rattle[s0 : s0 + g] += bp(r.standard_normal(g), 1200, 3800) * 0.35 / (k + 1)
+    return convolve(stereo(norm(snap + norm(knock) * weight + rattle), pan), CAVE, 0.18)
+
+
+def ratchet(seconds, rate_from, rate_to, pan_from=-0.3, pan_to=0.3, seed=0):
+    """A pawl clicking over gear teeth: noise clicks whose rate follows the gear's speed."""
+    r = np.random.default_rng(seed)
+    n = int(seconds * SR)
+    x = np.zeros(n + 4000)
+    tt, out = 0.0, []
+    while tt < seconds:
+        out.append(tt)
+        pos = tt / seconds
+        rate = rate_from + (rate_to - rate_from) * pos
+        tt += 1 / max(rate, 1)
+    for i, t0 in enumerate(out):
+        s0 = int(t0 * SR)
+        g = int(0.01 * SR)
+        a = r.uniform(0.6, 1) * np.sin(np.pi * min(1, t0 / seconds)) ** 0.4
+        x[s0 : s0 + g] += bp(r.standard_normal(g), 1700, 5200) * np.exp(-tvec(g) * 650) * a
+    x = x[:n]
+    return convolve(stereo(norm(x), np.linspace(pan_from, pan_to, n)), CAVE, 0.12)
+
+
+def slide(seconds, pan=0.0, seed=0):
+    """Heavy plates sliding over each other: gritty band noise with a slow swell (no pitch)."""
+    r = np.random.default_rng(seed)
+    n = int(seconds * SR)
+    pos = np.linspace(0, 1, n)
+    grit = bp(r.standard_normal(n), 500, 2600) * (0.5 + 0.5 * np.abs(signal.sosfilt(signal.butter(1, 30, "lp", fs=SR, output="sos"), r.standard_normal(n))) * 6)
+    body = lp(brown(n), 260, 4)
+    x = (norm(grit) * 0.6 + norm(body) * 0.7) * np.sin(np.pi * pos) ** 0.8
+    return convolve(stereo(norm(x), pan), HALL, 0.25)
+
+
 def bez(x1, y1, x2, y2):
     def f(tt):
         u = tt

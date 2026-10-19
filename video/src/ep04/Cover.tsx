@@ -3,16 +3,22 @@ import { AbsoluteFill } from "remotion";
 import "../lib/fonts";
 import { Backdrop } from "../components/Backdrop";
 import { C, F } from "../lib/theme";
-import { EXCEPTION, Tile, Wall } from "./scenes";
+import { Console, Engine, HEAR, HEAR_GLOW, Readout, T } from "./Machine";
 
-// EP04 reel cover (1080×1920): the wall of «سميع بصير» tiles, one exception lit, "…except once."
-export const Cover4: React.FC = () => (
-  <AbsoluteFill>
-    <Backdrop sun={0.6} moon={0.8} rays={0.6} />
-    <Wall f={0} dimAll={0.35} />
-    <Tile i={EXCEPTION} p={1} hl={1} />
-    <div style={{ position: "absolute", top: 1290, left: 0, right: 0, textAlign: "center", fontFamily: F.serif, fontStyle: "italic", fontSize: 120, color: C.ink }}>
-      …except <span style={{ color: "#F08A5D", textShadow: "0 0 30px rgba(240,138,93,0.5)" }}>once.</span>
-    </div>
-  </AbsoluteFill>
-);
+// EP04 reel cover (1080×1920): the engine locked on the tenth pair.
+export const Cover4: React.FC = () => {
+  const f = T.hits[9] + 20;
+  return (
+    <AbsoluteFill>
+      <Backdrop sun={0.7} moon={0.7} rays={0.7} />
+      <Engine f={f} />
+      <Readout f={f} opacity={1} />
+      <Console f={f} opacity={1} />
+      <div style={{ position: "absolute", top: 190, left: 0, right: 0, textAlign: "center", fontFamily: F.serif, fontSize: 118, lineHeight: 1.1, color: C.ink }}>
+        Ten times.
+        <br />
+        <span style={{ fontStyle: "italic", color: HEAR, textShadow: `0 0 30px ${HEAR_GLOW}` }}>Never reversed.</span>
+      </div>
+    </AbsoluteFill>
+  );
+};

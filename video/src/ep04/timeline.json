@@ -1,9 +1,15 @@
 {
-  "_note": "EP04 beat boundaries in frames @30fps. Read by Episode.tsx and scripts/sound_ep04.py.",
-  "hook": [0, 168],
-  "except": [150, 300],
-  "mirror": [282, 562],
-  "allah": [544, 724],
-  "story": [706, 1086],
-  "close": [1068, 1300]
+  "_note": "EP04 v2 beat boundaries and machine cues, in frames @30fps. Read by Episode.tsx, Machine.tsx and scripts/sound_ep04.py.",
+  "hook": [0, 150],
+  "decode": [132, 520],
+  "tenth": [502, 700],
+  "story": [682, 1060],
+  "verse": [1042, 1350],
+  "close": [1332, 1590],
+  "hits": [178, 226, 268, 304, 336, 364, 390, 414, 436, 566],
+  "travel": [150, 200, 244, 284, 318, 348, 374, 398, 420, 496],
+  "iris": [606, 676, 1430, 1496],
+  "zoom": [640, 760, 1336, 1424],
+  "home": [1410, 1520],
+  "reset": [1436, 1496]
 }
