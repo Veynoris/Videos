@@ -1,21 +1,21 @@
-# EP01 — Instagram / TikTok caption
+# EP01 — caption (v2)
 
-The Qur'an didn't say "309 years."
+How long did the People of the Cave sleep? 300 years — or 309?
 
-It said: "And they remained in their cave three hundred years — and added nine." (al-Kahf 18:25)
+The Qur'an gives both numbers, in one sentence:
+"And they remained in their cave three hundred years, and added nine." — al-Kahf 18:25
 
-Why split the number?
+So why not just say 309?
 
-Over 650 years ago, Ibn Kathīr explained it: a year by the sun and a year by the moon differ by about three years every century. So 300 solar years ≈ 309 lunar years.
+Ibn Kathīr (d. 1373 CE) explained it: count by the sun and it is 300 years. Count by the moon — whose year is 11 days shorter — and the very same days add up to about 309. Roughly 3 extra lunar years every century.
 
-Check it yourself: 300 × 365.24 days = 109,573 days ≈ 309.2 lunar years.
+Do the math: 300 × 365.24 = 109,573 days ÷ 354.37 = 309.2 lunar years.
 
-One number. Two calendars.
+Scholars differ here — Qatāda understood "and added nine" as reporting what people claimed — and the very next verse says: "Allah is most knowing of how long they remained." (18:26)
 
-Scholars differ on this wording — Qatāda held that "and added nine" reports what people claimed. And the very next verse says: "Allah is most knowing of how long they remained." (18:26)
+Read al-Kahf this Friday. Slowly.
 
-This Friday, read al-Kahf slowly — and look closely.
+💬 Had you ever noticed this? Tell me below.
+🔖 Save it for Friday.
 
-Follow Quran Decoding for the details hidden in plain sight.
-
-#Quran #SurahKahf #Islam #Muslim #IslamicKnowledge
+#quran #surahkahf #islam #muslim #islamicreminder

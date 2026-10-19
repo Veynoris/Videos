@@ -35,7 +35,7 @@ export const Episode: React.FC = () => {
       <Scene from={T.scholar[0]} to={T.scholar[1]}><Scholar /></Scene>
       <Scene from={T.next[0]} to={T.next[1]}><NextVerse /></Scene>
       {/* light transition: the camera dives into the sun and its light becomes the verse scene */}
-      <Bloom p={interpolate(f, [T.hook[1] - 22, T.hook[1] - 4, T.hook[1] + 22], [0, 0.85, 0], CLAMP)} cx={430} cy={800} />
+      <Bloom p={interpolate(f, [T.hook[1] - 22, T.hook[1] - 4, T.hook[1] + 22], [0, 0.6, 0], CLAMP)} cx={540} cy={700} />
       <Scene from={T.outro[0]} to={T.outro[1]} exit={0}><Outro total={T.outro[1] - T.outro[0]} /></Scene>
     </AbsoluteFill>
   );

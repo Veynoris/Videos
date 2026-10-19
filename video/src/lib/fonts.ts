@@ -13,6 +13,8 @@ const faces: Parameters<typeof loadFont>[0][] = [
   { family: F.serif, url: staticFile("fonts/newsreader-latin-500-normal.woff2"), weight: "500", style: "normal", unicodeRange: LATIN },
   { family: F.mono, url: staticFile("fonts/jetbrains-mono-latin-400-normal.woff2"), weight: "400", style: "normal", unicodeRange: LATIN },
   { family: F.mono, url: staticFile("fonts/jetbrains-mono-latin-ext-400-normal.woff2"), weight: "400", style: "normal", unicodeRange: LATIN_EXT },
+  { family: F.naskh, url: staticFile("fonts/amiri-arabic-400-normal.woff2"), weight: "400", style: "normal" },
+  { family: F.naskh, url: staticFile("fonts/amiri-arabic-700-normal.woff2"), weight: "700", style: "normal" },
   { family: F.quran, url: staticFile("fonts/KFGQPC-Uthmanic-Hafs.otf"), weight: "400", style: "normal" },
 ];
 

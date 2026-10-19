@@ -74,8 +74,9 @@ export const ArabicWords: React.FC<{
   start: number;
   stagger?: number;
   size?: number;
+  font?: string;
   style?: React.CSSProperties;
-}> = ({ tokens, start, stagger = 4, size = 84, style }) => {
+}> = ({ tokens, start, stagger = 4, size = 84, font = F.quran, style }) => {
   const f = useCurrentFrame();
   let i = 0;
   const out: React.ReactNode[] = [];
@@ -109,7 +110,7 @@ export const ArabicWords: React.FC<{
       dir="rtl"
       lang="ar"
       style={{
-        fontFamily: F.quran,
+        fontFamily: font,
         fontSize: size,
         lineHeight: 1.9,
         color: C.ink,

@@ -22,6 +22,7 @@ export const F = {
   serif: "Newsreader",
   mono: "JetBrains Mono",
   quran: "KFGQPC Hafs",
+  naskh: "Amiri", // commentary Arabic: deliberately distinct from the Qur'anic text face
 };
 
 // Mobile-safe region (platform UI overlays at top and bottom).

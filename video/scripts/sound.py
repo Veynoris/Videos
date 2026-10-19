@@ -39,7 +39,7 @@ S0, S1 = T["sky"]
 Y = T["years"][0]
 MOON_DONE, SUN_DONE = Y + 196, Y + 260
 C0 = T["cent"][0]
-FILL0, FILL1 = C0 + 48, C0 + 48 + 246
+FILL0, FILL1 = C0 + 48, C0 + 48 + 270
 SCH = T["scholar"][0]
 NX = T["next"][0]
 O = T["outro"][0]
@@ -304,6 +304,19 @@ def whirr(seconds, rate_hz, pan, lo=280, hi=900):
     return stereo(norm(x), pan)
 
 
+def bez(x1, y1, x2, y2):
+    def f(tt):
+        u = tt
+        for _ in range(14):
+            x = 3 * (1 - u) ** 2 * u * x1 + 3 * (1 - u) * u**2 * x2 + u**3 - tt
+            dx = 3 * (1 - u) ** 2 * x1 + 6 * (1 - u) * u * (x2 - x1) + 3 * u**2 * (1 - x2)
+            if abs(dx) < 1e-9:
+                break
+            u = min(1, max(0, u - x / dx))
+        return 3 * (1 - u) ** 2 * u * y1 + 3 * (1 - u) * u**2 * y2 + u**3
+    return f
+
+
 # ---------------------------------------------------------------- arrangement
 mix = Mix()
 t = tvec(N)
@@ -314,27 +327,31 @@ mood = np.interp(t, [0, 3, secs(V), secs(S0), secs(S0 + 60), secs(S1), secs(C0),
                  [0.8, 0.6, 0.5, 0.8, 1.0, 0.5, 0.6, 0.85, 0.5, 0.6, 0.0])
 mix.add(0, np.stack([room, np.roll(room, 2400)]) * mood, -27)
 
-# HOOK — "300" lands in the sun, "+9" arrives on a breath of air, three lines of text.
-mix.add(secs(H), thud(1.0, 2.6, 0.3), -15)
-mix.add(secs(H), swell(2.4, 160, 1100, 0.3), -24)                     # solar flare of warm air
-mix.add(secs(H + 4), sand(1.4, -0.6, 0.3, seed=1), -27)                # light sweep across 300
-mix.add(secs(H + 24) - 0.7, reverse_swell(0.7), -21)
-mix.add(secs(H + 24), thud(0.8, 2.0, 0.28), -17)
-mix.add(secs(H + 24), air_ring(1.4, 0.2, 0.8), -26)                    # the ring: present but soft
-mix.add(secs(H + 34), sand(1.3, 0.2, 0.8, seed=2), -28)
-mix.add(secs(H + 2), whoosh(1.0, 0.9, 0.3, 500, 3200, 0.8), -25)     # crescent sweeps in on its arc
-mix.add(secs(H + 22), sand(0.9, 0.9, -0.2, density=520, seed=13), -27) # anamorphic flare across the frame
-mix.add(secs(H + 32), whoosh(0.8, -0.4, 0.3, 300, 2000), -27)          # "The Qur'an didn't say 309."
-mix.add(secs(H + 56), swell(0.45, 1200, 4200, 0.2, 0.3), -29)          # the strike of light through 309
-mix.add(secs(H + 70), swell(0.6, 400, 1500, 0.2, 0.2), -30)            # line dissolves
-mix.add(secs(H + 80), whoosh(0.8, 0.4, -0.3, 300, 2000), -27)          # "It said 300... and 9."
-mix.add(secs(H + 118), thud(0.6, 1.8, 0.35), -21)                      # "One number. Two calendars."
-mix.add(secs(H + 116), swell(1.8, 140, 900, 0.35), -25)
-mix.add(secs(H + 140), sand(1.6, -0.5, 0.5, seed=3), -28)
-mix.add(secs(H + 142), swell(1.0, 600, 2600, 0.3), -30)               # gold rule drawn outward
+# HOOK — night outside the cave: stars wheel in time-lapse while the years race to 300, then 301…309.
+HK_COUNT_END, HK_NINE, HK_STEP = 60, 96, 4      # mirrors Opening.tsx COUNT_END / NINE_START / NINE_STEP
+night = wind(secs(T["hook"][1]) + 1, seed=21, lo=160, hi=480)
+night *= np.interp(tvec(night.shape[1]), [0, 0.5, 6.0, 7.0], [0.6, 1, 0.8, 0])
+mix.add(secs(H), night, -27)                                           # night air outside the cave
+mix.add(secs(H + 2), noise_riser(secs(HK_COUNT_END - 2), top=1.0), -19) # time racing
+hk_ease = bez(0.65, 0, 0.35, 1)
+prev = 0
+for fr in range(H + 4, H + HK_COUNT_END + 1):                           # a clock spinning through the years
+    yrs = int(300 * hk_ease((fr - H - 4) / (HK_COUNT_END - 4)))
+    if yrs // 25 > prev // 25:
+        mix.add(secs(fr), stereo(tick(yrs // 25 % 2 == 0), (yrs / 300) * 0.6 - 0.3), -31)
+    prev = yrs
+mix.add(secs(H + HK_COUNT_END) - 0.5, reverse_swell(0.5), -21)
+mix.add(secs(H + HK_COUNT_END), thud(1.0, 2.6, 0.3), -14)              # lands on 300
+mix.add(secs(H + 62), whoosh(0.8, -0.4, 0.3, 300, 2000), -28)          # "...and woke up 300 years later."
+for k in range(9):                                                     # 301 ... 309, one year at a time
+    mix.add(secs(H + HK_NINE + k * HK_STEP), pebble(0.1 + k * 0.07, seed=200 + k), -24)
+mix.add(secs(H + 98), swell(1.2, 500, 2400, 0.2, 0.5), -28)            # "...or was it 309?"
+mix.add(secs(H + 138), thud(0.6, 1.8, 0.35), -21)                      # "The Qur'an gives both numbers"
+mix.add(secs(H + 140), swell(1.8, 140, 900, 0.35), -26)
+mix.add(secs(H + 150), sand(1.6, -0.5, 0.5, seed=3), -29)
 HE = T["hook"][1]
-mix.add(secs(HE - 26), noise_riser(26 / FPS, top=0.6), -22)           # camera dives into the sun
-mix.add(secs(HE - 6), swell(2.2, 120, 1400, 0.12), -22)               # its light opens into the verse
+mix.add(secs(HE - 24), noise_riser(24 / FPS, top=0.6), -23)           # push forward into the light
+mix.add(secs(HE - 6), swell(2.2, 120, 1400, 0.12), -23)
 
 # VERSE — the card tilts up; the two phrases are swept with light.
 mix.add(secs(V - 12), whoosh(1.3, -0.6, 0.6, 220, 2200), -21)
@@ -373,20 +390,7 @@ mix.add(secs(C0 - 12), whoosh(1.2, 0.5, -0.5, 240, 2400), -21)
 mix.add(secs(FILL0), noise_riser(secs(FILL1 - FILL0)), -21)
 
 
-def bez(x1, y1, x2, y2):
-    def f(tt):
-        u = tt
-        for _ in range(14):
-            x = 3 * (1 - u) ** 2 * u * x1 + 3 * (1 - u) * u**2 * x2 + u**3 - tt
-            dx = 3 * (1 - u) ** 2 * x1 + 6 * (1 - u) * u * (x2 - x1) + 3 * u**2 * (1 - x2)
-            if abs(dx) < 1e-9:
-                break
-            u = min(1, max(0, u - x / dx))
-        return 3 * (1 - u) ** 2 * u * y1 + 3 * (1 - u) * u**2 * y2 + u**3
-    return f
-
-
-ease = bez(0.65, 0, 0.35, 1)
+ease = bez(0.42, 0, 0.58, 1)  # mirrors fillEase in Calendars.tsx
 SOLAR, LUNAR = 365.2422, 12 * 29.530589
 ps = pm = 0
 extra = 0
@@ -401,16 +405,29 @@ for fr in range(FILL0, FILL1 + 1):
         mix.add(secs(fr), pebble(0.35 + extra * 0.05, seed=100 + extra), -23)
         extra += 1
     ps, pm = s, m
+for k in (1, 2):                                                       # +3, +6 callouts at each century
+    fr = next(i for i in range(FILL0, FILL1 + 1) if 300 * SOLAR * ease((i - FILL0) / (FILL1 - FILL0)) >= k * 100 * SOLAR)
+    mix.add(secs(fr), thud(0.45, 1.4, 0.3), -24)
+    mix.add(secs(fr), swell(0.8, 600, 2600, 0.15, 0.5), -28)
 mix.add(secs(FILL1) - 0.6, reverse_swell(0.6), -20)
 mix.add(secs(FILL1 + 2), thud(1.1, 2.8, 0.32), -13)
 mix.add(secs(FILL1 + 2), air_ring(1.6, 0.0, 0.7), -26)
-mix.add(secs(FILL1 + 6), sand(2.2, -0.6, 0.8, density=380, seed=9), -26)   # light sweep over the grids
 mix.add(secs(FILL1 + 20), swell(2.4, 140, 800, 0.3), -26)
 
 # SCHOLAR / NEXT VERSE — quiet and reverent.
 mix.add(secs(SCH - 12), whoosh(1.5, -0.5, 0.4, 200, 1700), -23)
-mix.add(secs(SCH + 22), paper(1.1, 0.1), -26)
-mix.add(secs(SCH + 40), swell(3.0, 140, 700, 0.4), -29)
+mix.add(secs(SCH + 8), reverse_swell(1.9), -22)                        # rewinding 653 years
+mix.add(secs(SCH + 8), noise_riser(56 / FPS, top=0.5)[:, ::-1].copy(), -26)
+prev = 2026
+for fr in range(SCH + 8, SCH + 65):                                    # half-centuries rolling back
+    yr = int(2026 - 653 * hk_ease((fr - SCH - 8) / 56))
+    if yr // 50 < prev // 50:
+        mix.add(secs(fr), stereo(tick(True), -0.2), -31)
+    prev = yr
+mix.add(secs(SCH + 64), thud(0.7, 2.2, 0.35), -19)                      # arrival: Damascus, 1373
+mix.add(secs(SCH + 88), paper(1.4, 0.0), -24)                           # the manuscript opens
+mix.add(secs(SCH + 110), swell(3.6, 140, 700, 0.4), -29)
+mix.add(secs(SCH + 186), swell(0.9, 500, 2200, 0.3), -31)              # gold rule before the translation
 mix.add(secs(NX - 12), whoosh(1.5, 0.4, -0.4, 200, 1700), -23)
 mix.add(secs(NX + 12), swell(2.6, 160, 900, 0.4), -27)
 mix.add(secs(NX + 14), sand(1.8, 0.7, -0.7, density=240, seed=10), -29)    # follows the Arabic, right to left

@@ -1,9 +1,8 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Easing, interpolate, useCurrentFrame } from "remotion";
 import { BlurWords, Mono } from "../components/Text";
 import { Orbits } from "../components/Orbits";
-import { YearGrids } from "../components/YearGrids";
-import { Shockwave } from "../components/Orb";
+import { Ribbons } from "../components/Ribbons";
 import { Flare } from "../components/Light";
 import { CLAMP, easeInOut, focusIn, progress } from "../lib/anim";
 import { LUNAR_YEAR, SOLAR_YEAR, SPAN_DAYS } from "../lib/astro";
@@ -65,23 +64,33 @@ export const TwoYears: React.FC = () => {
 };
 
 export const FILL_START = 48;
-export const FILL_DUR = 246;
+export const FILL_DUR = 270;
+const fillEase = Easing.bezier(0.42, 0, 0.58, 1); // gentler than easeInOut so the three centuries are evenly paced
 
 export const fillDays = (f: number) =>
-  interpolate(f, [FILL_START, FILL_START + FILL_DUR], [0, SPAN_DAYS], { ...CLAMP, easing: easeInOut });
+  interpolate(f, [FILL_START, FILL_START + FILL_DUR], [0, SPAN_DAYS], { ...CLAMP, easing: fillEase });
 
-// 6 — Run both calendars over the same span of days: 300 vs 309.
+// 6 — Run both calendars over the same span of days. The century callouts show the lunar count
+// pulling ahead by ~3 years every 100 solar years: 100→103, 200→206, 300→309.
 export const Centuries: React.FC = () => {
   const f = useCurrentFrame();
   const d = fillDays(f);
   const done = FILL_START + FILL_DUR;
+  const sunN = Math.min(300, Math.floor(d / SOLAR_YEAR + 1e-9));
+  const moonN = Math.min(309, Math.floor(d / LUNAR_YEAR + 1e-9));
+  // frame at which each century is crossed (numeric inversion of the eased clock)
+  const crossAt = (k: number) => {
+    for (let i = FILL_START; i <= done; i++) if (fillDays(i) >= k * 100 * SOLAR_YEAR - 1e-6) return i;
+    return done;
+  };
+  const cents = [1, 2, 3].map((k) => progress(f, crossAt(k), 14));
   const swap = progress(f, done + 16, 20);
-  const pulse = progress(f, done - 10, 30);
-  const plus = progress(f, done + 4, 24);
+  const lead = [0, 1, 2, 3].reduce((n, k) => (k > 0 && f >= crossAt(k) ? k : n), 0);
+  const pop = lead > 0 ? progress(f, crossAt(lead), 12) : 0;
   return (
     <AbsoluteFill>
       <div style={{ ...center, top: 285, opacity: 1 - swap, filter: swap > 0 ? `blur(${swap * 12}px)` : undefined }}>
-        <BlurWords start={6} tokens={[{ t: "Now run both" }, { br: true, t: "" }, { t: "for three centuries." }]} />
+        <BlurWords start={6} tokens={[{ t: "Run both calendars" }, { br: true, t: "" }, { t: "for 300 years." }]} />
       </div>
       <div style={{ ...center, top: 285 }}>
         <BlurWords
@@ -90,45 +99,60 @@ export const Centuries: React.FC = () => {
           tokens={[{ t: "Same days." }, { br: true, t: "" }, { t: "Nine more years.", italic: true, color: C.moon, glow: C.moonGlow }]}
         />
       </div>
-      <div style={{ ...center, top: 560 }}>
-        <div style={{ display: "flex", width: 1000, justifyContent: "space-around" }}>
-          <Mono p={progress(f, 20, 20)} style={{ color: C.sun, width: 420 }}>Solar years</Mono>
-          <Mono p={progress(f, 24, 20)} style={{ color: C.moon, width: 420 }}>Lunar years</Mono>
+
+      {/* counters */}
+      <div style={{ position: "absolute", top: 610, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 120, ...focusIn(progress(f, 14, 26), 12, 10) }}>
+        <div style={{ width: 360, textAlign: "center" }}>
+          <Mono style={{ color: C.sun }}>By the sun</Mono>
+          <div style={{ fontFamily: F.serif, fontSize: 150, lineHeight: 1.1, color: C.ink, fontVariantNumeric: "tabular-nums" }}>{sunN}</div>
+        </div>
+        <div style={{ width: 360, textAlign: "center", position: "relative" }}>
+          <Mono style={{ color: C.moon }}>By the moon</Mono>
+          <div
+            style={{
+              fontFamily: F.serif,
+              fontSize: 150,
+              lineHeight: 1.1,
+              color: moonN > sunN ? C.moon : C.ink,
+              fontVariantNumeric: "tabular-nums",
+              textShadow: moonN > 300 ? `0 0 26px ${C.moonGlow}` : undefined,
+            }}
+          >
+            {moonN}
+          </div>
+          {lead > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                right: -40,
+                top: 34,
+                fontFamily: F.serif,
+                fontStyle: "italic",
+                fontSize: 54,
+                color: C.moon,
+                textShadow: `0 0 18px ${C.moonGlow}`,
+                transform: `translateY(${(1 - pop) * 16}px) scale(${0.8 + pop * 0.2})`,
+                opacity: pop,
+              }}
+            >
+              +{lead * 3}
+            </div>
+          )}
         </div>
       </div>
-      <div style={{ ...center, top: 610 }}>
-        <YearGrids d={d} appear={progress(f, 18, 30)} pulse={pulse} frame={f} />
+
+      <div style={{ ...center, top: 920 }}>
+        <Ribbons d={d} appear={progress(f, 22, 30)} centuries={cents} />
       </div>
-      <div style={{ position: "absolute", left: 790 - 199 + 8 * 21 + 22, top: 610 + 20 + 15 * 21 - 40, ...focusIn(plus, 0, 10) }}>
-        <div style={{ fontFamily: F.serif, fontStyle: "italic", fontSize: 54, color: C.moon, textShadow: `0 0 26px ${C.moonGlow}` }}>+9</div>
-      </div>
-      <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
-        <Shockwave cx={675} cy={945} p={interpolate(f, [done, done + 50], [0, 1], { ...CLAMP, easing: easeInOut })} color={C.moon} max={600} />
-      </svg>
-      <Flare cx={675} cy={945} p={interpolate(f, [done, done + 6, done + 50], [0, 0.9, 0], CLAMP)} color={C.moon} />
-      <div
-        style={{
-          position: "absolute",
-          left: 60,
-          top: 600,
-          width: 960,
-          height: 520,
-          mixBlendMode: "screen",
-          opacity: interpolate(f, [done + 6, done + 20, done + 50, done + 64], [0, 0.9, 0.9, 0], CLAMP),
-          background: `linear-gradient(110deg, transparent ${interpolate(f, [done + 6, done + 64], [-30, 100], CLAMP)}%, rgba(255,240,210,0.22) ${interpolate(f, [done + 6, done + 64], [-15, 115], CLAMP)}%, transparent ${interpolate(f, [done + 6, done + 64], [0, 130], CLAMP)}%)`,
-        }}
-      />
-      <div style={{ ...center, top: 1150 }}>
+      <div style={{ ...center, top: 1270 }}>
         <Mono p={progress(f, 30, 20)} style={{ fontSize: 24 }}>
           Day {Math.round(d).toLocaleString("en-US")}
         </Mono>
       </div>
-      <div style={{ ...center, top: 1280, flexDirection: "column", alignItems: "center", gap: 18 }}>
-        <Mono p={progress(f, done + 60, 24)} style={{ fontSize: 23, color: C.ink }}>
-          300 solar years = 309.2 lunar years
-        </Mono>
+      <div style={{ ...center, top: 1360, flexDirection: "column", alignItems: "center", gap: 18 }}>
+        <BlurWords start={done + 50} tokens={[{ t: "≈ 3 more lunar years" }, { t: "every century.", italic: true, color: C.moon }]} style={{ fontSize: 44 }} />
         <Mono p={progress(f, done + 74, 24)} style={{ fontSize: 21 }}>
-          Close, not exact · about 73 days apart
+          300 solar = 309.2 lunar · ≈ 73 days apart
         </Mono>
       </div>
     </AbsoluteFill>

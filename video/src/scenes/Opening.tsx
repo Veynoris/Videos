@@ -2,10 +2,8 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { ArabicWords, BlurWords, Mono } from "../components/Text";
 import { Card } from "../components/Card";
-import { Shockwave } from "../components/Orb";
-import { Crescent, SunDisc } from "../components/Celestial";
-import { Flare, Rosette, StarMark } from "../components/Light";
-import { CLAMP, easeIn, easeInOut, easeOut, focusIn, progress } from "../lib/anim";
+import { Rosette, StarMark } from "../components/Light";
+import { CLAMP, easeIn, easeInOut, focusIn, progress } from "../lib/anim";
 import { lerpColor } from "../lib/astro";
 import { shine } from "../lib/shine";
 import { C, F } from "../lib/theme";
@@ -16,151 +14,130 @@ const rnd = (i: number, n: number) => {
   const x = Math.sin(i * 73.13 + n * 19.7) * 43758.5453;
   return x - Math.floor(x);
 };
-const DUST = Array.from({ length: 40 }, (_, i) => ({
-  a: rnd(i, 1) * Math.PI * 2,
-  d: 420 + rnd(i, 2) * 620,
-  s: 1.5 + rnd(i, 3) * 3,
-  delay: rnd(i, 4) * 30,
+
+// Star field circling the celestial pole: drawn as arcs whose length grows with the time-lapse speed.
+export const POLE = { x: 540, y: 520 };
+export const TRAILS = Array.from({ length: 150 }, (_, i) => ({
+  r: 60 + Math.pow(rnd(i, 1), 0.8) * 1150,
+  a: rnd(i, 2) * Math.PI * 2,
+  w: 0.8 + rnd(i, 3) * 2,
+  o: 0.25 + rnd(i, 4) * 0.6,
+  warm: rnd(i, 5) > 0.82,
 }));
 
-const SUN = { x: 430, y: 800 };
-const NINE = { x: 815, y: 792 };
+// Mountain ridge with a cave mouth, seen from outside at night.
+export const RIDGE = (() => {
+  const pts: string[] = [];
+  for (let i = 0; i <= 40; i++) {
+    const x = (i / 40) * 1180 - 50;
+    const y = 1560 - Math.sin((i / 40) * Math.PI) * 230 - (rnd(i, 9) - 0.5) * 40 - Math.sin(i * 0.9) * 18;
+    pts.push(`${x.toFixed(0)},${y.toFixed(0)}`);
+  }
+  return `M-50,1920 L${pts.join(" L")} L1130,1920 Z`;
+})();
 
-// 1 — Hook, staged as a celestial event.
-// Frame 0: a blazing sun holds "300" (thumbnail-safe). A crescent sweeps in on an arc and "+9" bursts
-// out of its light with an anamorphic flare. Then: "The Qur'an didn't say 309" (struck through with light)
-// -> "It said 300… and 9." -> "One number. Two calendars." The camera finally pushes into the sun.
+export const COUNT_END = 60; // the counter lands on 300
+export const NINE_START = 96; // then ticks 301…309, one by one
+export const NINE_STEP = 4;
+
+// 1 — Hook: "They fell asleep in a cave…" Stars wheel overhead in time-lapse while a counter races to 300,
+// then jolts and ticks on to 309: "…or was it 309?" -> "The Qur'an gives both numbers — in one sentence."
 export const Hook: React.FC<{ dur: number }> = ({ dur }) => {
   const f = useCurrentFrame();
-  const three = progress(f, -26, 32);
-  const sunUp = interpolate(f, [-20, 90], [70, 0], { ...CLAMP, easing: easeOut });
-  const plus = progress(f, 22, 24);
-  const wave = interpolate(f, [24, 72], [0, 1], { ...CLAMP, easing: easeInOut });
-  const flare = interpolate(f, [20, 27, 40, 76], [0, 1, 0.55, 0], CLAMP);
-  const sweep300 = interpolate(f, [4, 46], [0, 1], CLAMP);
-  const sweep9 = interpolate(f, [30, 72], [0, 1], CLAMP);
-  const sweepCal = interpolate(f, [140, 190], [0, 1], CLAMP);
-  const shiftL = interpolate(plus, [0, 1], [0, -110]);
-  const strike = progress(f, 56, 14);
-  const l1out = progress(f, 76, 14);
-  const rule = progress(f, 142, 30);
-  const title = progress(f, -16, 30);
-  // camera: slow dolly-in, then a push into the sun that hands over to the verse
-  const dolly = interpolate(f, [0, dur - 26], [1, 1.05], CLAMP);
-  const dive = interpolate(f, [dur - 26, dur], [1, 1.9], { ...CLAMP, easing: easeIn });
-  const roll = interpolate(f, [0, dur], [-0.6, 0], CLAMP);
-  // crescent travels in on an arc
-  const m = interpolate(f, [2, 30], [0, 1], { ...CLAMP, easing: easeOut });
-  const arc = (k: number) => ({
-    x: (1 - k) ** 2 * 1240 + 2 * (1 - k) * k * 1150 + k * k * 900,
-    y: (1 - k) ** 2 * 120 + 2 * (1 - k) * k * 420 + k * k * 690,
-  });
-  const moon = arc(m);
+  const c = interpolate(f, [4, COUNT_END], [0, 1], { ...CLAMP, easing: easeInOut });
+  const extra = Math.max(0, Math.min(9, Math.floor((f - NINE_START) / NINE_STEP) + 1));
+  const years = f < NINE_START ? Math.round(c * 300) : 300 + extra;
+  // sky rotation: fast while the years race, then a slow drift
+  const rot = c * Math.PI * 1.7 + f * 0.0025;
+  const speed = f < COUNT_END ? Math.sin(Math.PI * Math.min(1, Math.max(0, (f - 4) / (COUNT_END - 4)))) : 0;
+  const trail = 0.05 + speed * 0.9 + Math.max(0, 1 - Math.abs(f - COUNT_END) / 30) * 0.2;
+  const land = progress(f, COUNT_END, 16);
+  const nineGlow = f >= NINE_START ? interpolate(f, [NINE_START, NINE_START + 36, NINE_START + 80], [0, 1, 0.6], CLAMP) : 0;
+  const tick = f >= NINE_START && f < NINE_START + 9 * NINE_STEP ? 1 - ((f - NINE_START) % NINE_STEP) / NINE_STEP : 0;
+  const A = 1 - progress(f, 50, 12);
+  const B = progress(f, 62, 14) * (1 - progress(f, 88, 10));
+  const dive = interpolate(f, [dur - 24, dur], [1, 1.6], { ...CLAMP, easing: easeIn });
+  const sweepFinal = interpolate(f, [150, 200], [0, 1], CLAMP);
+  const isMoon = years > 300;
   return (
     <AbsoluteFill>
-      <AbsoluteFill style={{ transform: `rotate(${roll}deg) scale(${dolly * dive})`, transformOrigin: `${SUN.x}px ${SUN.y}px` }}>
-        {/* gold dust drawn into the sun */}
+      <AbsoluteFill style={{ transform: `scale(${interpolate(f, [0, dur], [1.04, 1])})` }}>
         <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
-          {DUST.map((d, i) => {
-            const k = interpolate(f, [-40 + d.delay, 60 + d.delay], [0, 1], { ...CLAMP, easing: easeInOut });
-            const r = d.d * (1 - k) + 40;
-            return <circle key={i} cx={SUN.x + Math.cos(d.a) * r} cy={SUN.y + Math.sin(d.a) * r * 0.9} r={d.s} fill="#F6D9A0" opacity={(1 - k) * 0.85 * Math.min(1, k * 6 + 0.2)} />;
+          <defs>
+            <radialGradient id="horizon" cx="50%" cy="80%" r="60%">
+              <stop offset="0%" stopColor="rgba(233,185,110,0.22)" />
+              <stop offset="100%" stopColor="rgba(233,185,110,0)" />
+            </radialGradient>
+          </defs>
+          {TRAILS.map((s, i) => {
+            const a1 = s.a + rot;
+            const a0 = a1 - trail * (0.4 + s.r / 2400);
+            const x0 = POLE.x + Math.cos(a0) * s.r, y0 = POLE.y + Math.sin(a0) * s.r;
+            const x1 = POLE.x + Math.cos(a1) * s.r, y1 = POLE.y + Math.sin(a1) * s.r;
+            const col = s.warm ? "#F3D7A2" : "#E8EEF8";
+            return (
+              <g key={i}>
+                <path d={`M${x0.toFixed(1)},${y0.toFixed(1)} A${s.r},${s.r} 0 0 1 ${x1.toFixed(1)},${y1.toFixed(1)}`} stroke={col} strokeWidth={s.w} strokeLinecap="round" fill="none" opacity={s.o * (0.35 + speed * 0.5)} />
+                <circle cx={x1} cy={y1} r={s.w * 0.9} fill={col} opacity={s.o} />
+              </g>
+            );
           })}
-          {/* crescent trail */}
-          {Array.from({ length: 12 }, (_, i) => {
-            const k = Math.max(0, m - (i + 1) * 0.035);
-            if (m >= 1 || k <= 0) return null;
-            const q = arc(k);
-            return <circle key={i} cx={q.x} cy={q.y} r={10 - i * 0.6} fill={C.moon} opacity={(1 - i / 12) * 0.35} />;
-          })}
-          <Shockwave cx={NINE.x} cy={NINE.y} p={wave} color={C.moon} max={460} />
+          <rect x={0} y={1100} width={1080} height={820} fill="url(#horizon)" />
+          <path d={RIDGE} fill="#03060C" />
+          {/* the cave mouth, faintly lit from within */}
+          <path d="M462,1524 C466,1488 470,1452 492,1430 C506,1414 524,1404 546,1407 C572,1410 590,1426 600,1448 C612,1474 614,1500 618,1524 Z" fill="#000" stroke="rgba(233,185,110,0.35)" strokeWidth={2} style={{ filter: "drop-shadow(0 0 18px rgba(233,185,110,0.35))" }} />
         </svg>
-        <SunDisc cx={SUN.x} cy={SUN.y + sunUp} r={200} p={progress(f, -30, 40)} />
-        <Crescent cx={moon.x} cy={moon.y} r={104} p={interpolate(f, [2, 14], [0, 0.78], CLAMP)} />
-        <div style={{ ...center, top: 640, alignItems: "baseline" }}>
-          <div
-            style={{
-              fontFamily: F.serif,
-              fontSize: 330,
-              lineHeight: 1,
-              transform: `translateX(${shiftL}px) scale(${interpolate(three, [0, 1], [1.08, 1])})`,
-              opacity: three,
-              ...shine(C.sun, sweep300, C.sunGlow),
-            }}
-          >
-            300
-          </div>
-          <div
-            style={{
-              position: "absolute",
-              left: 700,
-              top: 60,
-              fontFamily: F.serif,
-              fontStyle: "italic",
-              fontSize: 220,
-              lineHeight: 1,
-              ...focusIn(plus, 0, 34),
-              transform: `scale(${interpolate(plus, [0, 1], [1.6, 1])})`,
-              ...shine(C.moon, sweep9, C.moonGlow),
-            }}
-          >
-            +9
-          </div>
-        </div>
-        <Flare cx={NINE.x} cy={NINE.y} p={flare} color={C.moon} />
       </AbsoluteFill>
 
-      {/* title card: ornament, rules drawn outward from the centre */}
-      <div style={{ ...center, top: 236, alignItems: "center", gap: 22, opacity: title }}>
-        <div style={{ width: 150 * title, height: 1, background: `linear-gradient(90deg, transparent, ${C.sun})` }} />
-        <StarMark size={22} p={title} />
-        <Mono p={title} style={{ color: C.ink, letterSpacing: "0.4em" }}>Al-Kahf · 18:25</Mono>
-        <StarMark size={22} p={title} />
-        <div style={{ width: 150 * title, height: 1, background: `linear-gradient(90deg, ${C.sun}, transparent)` }} />
-      </div>
-
-      <div style={{ ...center, top: 1076, opacity: 1 - l1out, filter: l1out > 0 ? `blur(${l1out * 14}px)` : undefined }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-          <BlurWords start={34} stagger={3} tokens={[{ t: "The Qur'an didn't say" }]} style={{ fontSize: 66 }} />
-          <div style={{ position: "relative", ...focusIn(progress(f, 46, 18), 10, 12) }}>
-            <span style={{ fontFamily: F.serif, fontStyle: "italic", fontSize: 66, color: C.moon }}>309</span>
-            <div
-              style={{
-                position: "absolute",
-                left: -8,
-                right: -8,
-                top: "54%",
-                height: 4,
-                borderRadius: 2,
-                background: `linear-gradient(90deg, #FFFFFF, ${C.sun})`,
-                boxShadow: `0 0 14px ${C.sunGlow}`,
-                transform: `scaleX(${strike})`,
-                transformOrigin: "0 50%",
-              }}
-            />
+      <AbsoluteFill style={{ transform: `scale(${dive})`, transformOrigin: "540px 700px" }}>
+        <div style={{ ...center, top: 236, alignItems: "center", gap: 22, opacity: progress(f, -16, 30) }}>
+          <div style={{ width: 150 * progress(f, -16, 30), height: 1, background: `linear-gradient(90deg, transparent, ${C.sun})` }} />
+          <StarMark size={22} />
+          <Mono style={{ color: C.ink, letterSpacing: "0.4em" }}>Al-Kahf · 18:25</Mono>
+          <StarMark size={22} />
+          <div style={{ width: 150 * progress(f, -16, 30), height: 1, background: `linear-gradient(90deg, ${C.sun}, transparent)` }} />
+        </div>
+        <div style={{ ...center, top: 520 }}>
+          <Mono style={{ fontSize: 24, color: isMoon ? C.moon : C.sun }} p={progress(f, -10, 16)}>
+            {isMoon ? "Years asleep · by the moon?" : "Years asleep"}
+          </Mono>
+        </div>
+        <div style={{ ...center, top: 570 }}>
+          <div
+            style={{
+              fontFamily: F.serif,
+              fontSize: 300,
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+              transform: `scale(${1 + (1 - land) * 0.04 * (f >= COUNT_END ? 1 : 0) + tick * 0.03})`,
+              ...(isMoon ? shine(C.moon, 0.5, C.moonGlow) : shine(C.sun, interpolate(f, [COUNT_END, COUNT_END + 40], [0, 1], CLAMP), C.sunGlow)),
+              filter: `drop-shadow(0 0 ${20 + nineGlow * 30}px ${isMoon ? C.moonGlow : C.sunGlow})`,
+            }}
+          >
+            {years}
           </div>
         </div>
-      </div>
-      <div style={{ ...center, top: 1076 }}>
-        <BlurWords
-          start={86}
-          stagger={4}
-          tokens={[{ t: "It said" }, { t: "300…", color: C.sun }, { t: "and 9.", italic: true, color: C.moon }]}
-          style={{ fontSize: 66 }}
-        />
-      </div>
-      <div style={{ ...center, top: 1196 }}>
-        <BlurWords
-          start={118}
-          stagger={5}
-          dur={22}
-          tokens={[{ t: "One number." }, { br: true, t: "" }, { t: "Two calendars.", italic: true, color: C.sun, glow: C.sunGlow, sweep: sweepCal }]}
-          style={{ fontSize: 100, lineHeight: 1.1 }}
-        />
-      </div>
-      <div style={{ ...center, top: 1438 }}>
-        <div style={{ width: 420 * rule, height: 2, background: `linear-gradient(90deg, transparent, ${C.sun}, transparent)`, boxShadow: `0 0 12px ${C.sunGlow}` }} />
-      </div>
+        <div style={{ ...center, top: 960, opacity: A, filter: A < 1 ? `blur(${(1 - A) * 12}px)` : undefined }}>
+          <BlurWords start={-12} stagger={2} dur={14} tokens={[{ t: "They fell asleep in a cave…" }]} style={{ fontSize: 64 }} />
+        </div>
+        <div style={{ ...center, top: 960, opacity: B > 0 || f < 88 ? 1 : 0 }}>
+          <div style={{ opacity: f < 62 ? 0 : 1 - progress(f, 88, 10), filter: progress(f, 88, 10) > 0 ? `blur(${progress(f, 88, 10) * 12}px)` : undefined }}>
+            <BlurWords start={62} stagger={3} tokens={[{ t: "…and woke up" }, { t: "300 years", color: C.sun }, { t: "later." }]} style={{ fontSize: 64 }} />
+          </div>
+        </div>
+        <div style={{ ...center, top: 960 }}>
+          <BlurWords start={98} stagger={4} tokens={[{ t: "…or was it" }, { t: "309?", italic: true, color: C.moon, glow: C.moonGlow }]} style={{ fontSize: 72 }} />
+        </div>
+        <div style={{ ...center, top: 1110 }}>
+          <BlurWords
+            start={140}
+            stagger={4}
+            dur={20}
+            tokens={[{ t: "The Qur'an gives both numbers" }, { br: true, t: "" }, { t: "— in one sentence.", italic: true, color: C.sun, glow: C.sunGlow, sweep: sweepFinal }]}
+            style={{ fontSize: 62, lineHeight: 1.2 }}
+          />
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
