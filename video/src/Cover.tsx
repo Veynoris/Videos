@@ -61,10 +61,5 @@ export const Cover: React.FC = () => (
       <br />
       <span style={{ fontStyle: "italic", ...shine(C.sun, 0.5, C.sunGlow) }}>— in one sentence.</span>
     </div>
-    <div style={{ position: "absolute", top: 1712, left: 0, right: 0, display: "flex", justifyContent: "center", alignItems: "center", gap: 18 }}>
-      <StarMark size={20} />
-      <div style={{ fontFamily: F.mono, fontSize: 24, letterSpacing: "0.4em", color: C.ink }}>QURAN DECODING</div>
-      <StarMark size={20} />
-    </div>
   </AbsoluteFill>
 );
