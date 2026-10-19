@@ -18,6 +18,8 @@ export const Card: React.FC<{ p: number; width?: number; children: React.ReactNo
       border: `1px solid ${C.hair}`,
       boxShadow: "0 50px 140px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)",
       ...focusIn(p, 30, 22),
+      transform: `perspective(1500px) rotateX(${(1 - p) * 24}deg) translateY(${(1 - p) * 60}px) scale(${0.94 + p * 0.06})`,
+      transformOrigin: "50% 100%",
       ...style,
     }}
   >

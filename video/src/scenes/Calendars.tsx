@@ -102,6 +102,18 @@ export const Centuries: React.FC = () => {
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
         <Shockwave cx={675} cy={945} p={interpolate(f, [done, done + 50], [0, 1], { ...CLAMP, easing: easeInOut })} color={C.moon} max={600} />
       </svg>
+      <div
+        style={{
+          position: "absolute",
+          left: 60,
+          top: 600,
+          width: 960,
+          height: 520,
+          mixBlendMode: "screen",
+          opacity: interpolate(f, [done + 6, done + 20, done + 50, done + 64], [0, 0.9, 0.9, 0], CLAMP),
+          background: `linear-gradient(110deg, transparent ${interpolate(f, [done + 6, done + 64], [-30, 100], CLAMP)}%, rgba(255,240,210,0.22) ${interpolate(f, [done + 6, done + 64], [-15, 115], CLAMP)}%, transparent ${interpolate(f, [done + 6, done + 64], [0, 130], CLAMP)}%)`,
+        }}
+      />
       <div style={{ ...center, top: 1150 }}>
         <Mono p={progress(f, 30, 20)} style={{ fontSize: 24 }}>
           Day {Math.round(d).toLocaleString("en-US")}

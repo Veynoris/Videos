@@ -3,31 +3,38 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { ArabicWords, BlurWords, Mono } from "../components/Text";
 import { Card } from "../components/Card";
 import { Shockwave } from "../components/Orb";
-import { CLAMP, easeInOut, focusIn, progress } from "../lib/anim";
+import { Crescent, SunDisc } from "../components/Celestial";
+import { CLAMP, easeInOut, easeOut, focusIn, progress } from "../lib/anim";
 import { lerpColor } from "../lib/astro";
 import { shine } from "../lib/shine";
 import { C, F } from "../lib/theme";
 
 const center: React.CSSProperties = { position: "absolute", left: 0, right: 0, display: "flex", justifyContent: "center" };
 
-// 1 — Hook: 300 is on screen from frame 0; +9 lands with a shockwave; then the question.
+// 1 — Hook: a blazing sun behind "300" (on screen from frame 0), a crescent behind "+9",
+// then: "The Qur'an didn't say 309." -> "It said 300… and 9." -> "One number. Two calendars."
 export const Hook: React.FC = () => {
   const f = useCurrentFrame();
-  const three = progress(f, -26, 32); // pre-rolled: already in focus on the first frame
+  const three = progress(f, -26, 32);
+  const sunUp = interpolate(f, [-20, 90], [70, 0], { ...CLAMP, easing: easeOut });
   const plus = progress(f, 20, 26);
-  const wave = interpolate(f, [24, 70], [0, 1], { ...CLAMP, easing: easeInOut });
+  const wave = interpolate(f, [24, 72], [0, 1], { ...CLAMP, easing: easeInOut });
   const sweep300 = interpolate(f, [4, 46], [0, 1], CLAMP);
   const sweep9 = interpolate(f, [34, 76], [0, 1], CLAMP);
+  const sweepCal = interpolate(f, [140, 190], [0, 1], CLAMP);
   const shiftL = interpolate(plus, [0, 1], [0, -95]);
+  const l1out = progress(f, 70, 14);
   return (
     <AbsoluteFill>
-      <div style={{ ...center, top: 300 }}>
+      <div style={{ ...center, top: 250 }}>
         <Mono p={progress(f, -14, 16)}>Al-Kahf · 18:25</Mono>
       </div>
+      <SunDisc cx={445} cy={790 + sunUp} r={190} p={progress(f, -30, 40)} />
+      <Crescent cx={930} cy={690} r={104} p={progress(f, 16, 30) * 0.75} />
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
-        <Shockwave cx={845} cy={850} p={wave} color={C.moon} max={520} />
+        <Shockwave cx={845} cy={790} p={wave} color={C.moon} max={480} />
       </svg>
-      <div style={{ ...center, top: 680, alignItems: "baseline" }}>
+      <div style={{ ...center, top: 630, alignItems: "baseline" }}>
         <div
           style={{
             fontFamily: F.serif,
@@ -57,17 +64,25 @@ export const Hook: React.FC = () => {
           +9
         </div>
       </div>
-      <div style={{ ...center, top: 1130 }}>
+      <div style={{ ...center, top: 1070, opacity: 1 - l1out, filter: l1out > 0 ? `blur(${l1out * 14}px)` : undefined }}>
+        <BlurWords start={34} stagger={3} tokens={[{ t: "The Qur'an didn't say" }, { t: "309.", italic: true, color: C.moon }]} style={{ fontSize: 64 }} />
+      </div>
+      <div style={{ ...center, top: 1070 }}>
         <BlurWords
-          start={58}
+          start={82}
           stagger={4}
-          dur={20}
-          tokens={[{ t: "Why not just say" }, { t: "309?", italic: true, color: C.moon, glow: C.moonGlow }]}
-          style={{ fontSize: 80 }}
+          tokens={[{ t: "It said" }, { t: "300…", color: C.sun }, { t: "and 9.", italic: true, color: C.moon }]}
+          style={{ fontSize: 64 }}
         />
       </div>
-      <div style={{ ...center, top: 1270 }}>
-        <Mono p={progress(f, 86, 22)}>The answer is older than you think</Mono>
+      <div style={{ ...center, top: 1190 }}>
+        <BlurWords
+          start={120}
+          stagger={5}
+          dur={22}
+          tokens={[{ t: "One number." }, { br: true, t: "" }, { t: "Two calendars.", italic: true, color: C.sun, glow: C.sunGlow, sweep: sweepCal }]}
+          style={{ fontSize: 96, lineHeight: 1.12 }}
+        />
       </div>
     </AbsoluteFill>
   );
@@ -85,8 +100,9 @@ export const Verse: React.FC = () => {
       <div style={{ ...center, top: 260 }}>
         <BlurWords
           start={6}
-          tokens={[{ t: "It says" }, { t: "three hundred years", color: C.sun }, { br: true, t: "" }, { t: "…and nine more.", italic: true, color: C.moon }]}
+          tokens={[{ t: "Look closely." , italic: true }]}
           stagger={4}
+          style={{ fontSize: 72 }}
         />
       </div>
       <div style={{ ...center, top: 520 }}>

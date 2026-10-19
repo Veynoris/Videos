@@ -12,11 +12,14 @@ type WordsProps = {
   stagger?: number;
   dur?: number;
   style?: React.CSSProperties;
+  track?: boolean;
 };
 
 // Word-by-word blur reveal (the signature text entrance of all three references).
-export const BlurWords: React.FC<WordsProps> = ({ tokens, start, stagger = 3, dur = 18, style }) => {
+export const BlurWords: React.FC<WordsProps> = ({ tokens, start, stagger = 3, dur = 18, style, track = true }) => {
   const f = useCurrentFrame();
+  const words = tokens.reduce((n, t) => n + (t.br ? 0 : t.t.split(" ").filter(Boolean).length), 0);
+  const tp = progress(f, start, words * stagger + dur + 30);
   let i = 0;
   const out: React.ReactNode[] = [];
   tokens.forEach((tok, ti) => {
@@ -54,7 +57,7 @@ export const BlurWords: React.FC<WordsProps> = ({ tokens, start, stagger = 3, du
         fontSize: 66,
         lineHeight: 1.18,
         textAlign: "center",
-        letterSpacing: "-0.01em",
+        letterSpacing: track ? `${-0.01 + (1 - tp) * 0.09}em` : "-0.01em",
         ...style,
       }}
     >

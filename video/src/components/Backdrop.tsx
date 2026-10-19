@@ -1,11 +1,11 @@
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { C } from "../lib/theme";
 
-type Props = { sun: number; moon: number };
+type Props = { sun: number; moon: number; rays: number };
 
 // Navy field with slow-drifting radial glows, vignette and fine grain (reference A).
 // `sun` / `moon` (0..1) tint the glows towards the episode's two accents.
-export const Backdrop: React.FC<Props> = ({ sun, moon }) => {
+export const Backdrop: React.FC<Props> = ({ sun, moon, rays }) => {
   const f = useCurrentFrame();
   const t = f / 30;
   const dx1 = Math.sin(t * 0.21) * 60;
@@ -31,6 +31,18 @@ export const Backdrop: React.FC<Props> = ({ sun, moon }) => {
       <AbsoluteFill
         style={{
           background: `radial-gradient(700px 1100px at 540px 960px, rgba(18,30,52,0.55), transparent 75%)`,
+        }}
+      />
+      {/* far star layer: tiny, slow, parallax against the dust */}
+      <Stars frame={f} />
+      {/* god rays falling from above the frame, turning very slowly */}
+      <AbsoluteFill
+        style={{
+          opacity: rays * 0.55,
+          background: `repeating-conic-gradient(from ${168 + Math.sin(t * 0.05) * 6}deg at 540px -260px, rgba(236,214,170,0.07) 0deg 2.2deg, transparent 2.2deg 7deg)`,
+          WebkitMaskImage: "linear-gradient(180deg, black 0%, rgba(0,0,0,0.5) 45%, transparent 85%)",
+          maskImage: "linear-gradient(180deg, black 0%, rgba(0,0,0,0.5) 45%, transparent 85%)",
+          filter: "blur(6px)",
         }}
       />
       {/* vignette */}
@@ -78,6 +90,27 @@ const Dust: React.FC<{ frame: number }> = ({ frame }) => {
         const x = m.x + Math.sin(t * 0.4 + m.ph) * 18;
         const tw = 0.6 + 0.4 * Math.sin(t * 0.9 + m.ph);
         return <circle key={i} cx={x} cy={y} r={m.s} fill="#E9E2D2" opacity={m.a * tw} />;
+      })}
+    </svg>
+  );
+};
+
+const STARS = Array.from({ length: 120 }, (_, i) => {
+  const r = (n: number) => {
+    const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  return { x: r(1) * 1080, y: r(2) * 1920, s: 0.6 + r(3) * 1.3, ph: r(4) * 6.28, a: 0.25 + r(5) * 0.55 };
+});
+
+const Stars: React.FC<{ frame: number }> = ({ frame }) => {
+  const t = frame / 30;
+  return (
+    <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+      {STARS.map((s, i) => {
+        const y = (((s.y - t * 2.2) % 1920) + 1920) % 1920;
+        const tw = 0.55 + 0.45 * Math.sin(t * 1.3 + s.ph);
+        return <circle key={i} cx={s.x} cy={y} r={s.s} fill="#F4F0E6" opacity={s.a * tw * 0.6} />;
       })}
     </svg>
   );

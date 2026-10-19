@@ -1,41 +1,52 @@
-"""Quran Decoding EP01 — cinematic sound design, synthesised and mastered offline.
+"""Quran Decoding EP01 — halal sound design (v3), synthesised and mastered offline.
 
-No music track, no recitation, no external samples: every layer is built here and
-processed with Spotify's Pedalboard (studio reverb / dynamics) and SciPy.
-All cue times come from the Remotion timeline (src/Episode.tsx T, scene-local
-frames in src/scenes/*.tsx), so sound and picture stay frame-locked.
+Policy: no music, no musical instruments, no bells or chimes, no melodies or tonal
+pads, and no Qur'an recitation used as an effect. Many scholars hold that musical
+instruments are impermissible, and Sahih Muslim 2114 says: "The bell is the flute
+of Shaytan." So every layer here is built from non-musical, natural sources:
+air, wind, breath-like swells, stone and earth thuds, sand, pebbles, water drops,
+paper and a mechanical clock tick.
+
+Processing: NumPy/SciPy synthesis + Spotify Pedalboard (filters, reverb, dynamics)
+and synthetic convolution spaces (hall, cave). Cue times come from
+src/timeline.json plus scene-local frames in src/scenes/*.tsx.
 
 Usage: python3 -I scripts/sound.py out/sfx.wav
 """
+import json
+import os
 import sys
 import wave
 
 import numpy as np
 import pyloudnorm
-from pedalboard import Chorus, Compressor, HighpassFilter, HighShelfFilter, Limiter, LowpassFilter, Pedalboard, Reverb
+from pedalboard import Compressor, HighpassFilter, HighShelfFilter, Limiter, LowpassFilter, Pedalboard, Reverb
 from scipy import signal
 
 SR = 48000
 FPS = 30
-TOTAL_FRAMES = 1960
+HERE = os.path.dirname(os.path.abspath(__file__))
+T = {k: v for k, v in json.load(open(os.path.join(HERE, "..", "src", "timeline.json"))).items() if not k.startswith("_")}
+TOTAL_FRAMES = T["outro"][1]
 DUR = TOTAL_FRAMES / FPS
 N = int(DUR * SR)
-rng = np.random.default_rng(1373)  # Ibn Kathir's death year (CE), for reproducibility
+rng = np.random.default_rng(1373)
 
-# Timeline (absolute frames) — mirrors src/Episode.tsx
-T = dict(hook=0, verse=134, sky=384, years=520, cent=804, scholar=1340, next=1596, outro=1772)
-SKY_END = 540
-MOON_DONE = T["years"] + 196
-SUN_DONE = T["years"] + 260
-FILL0, FILL1 = T["cent"] + 48, T["cent"] + 48 + 246
-MERGE = T["outro"] + 74
+# Scene-local anchors (frames) mirrored from the scene components.
+H = T["hook"][0]
+V = T["verse"][0]
+S0, S1 = T["sky"]
+Y = T["years"][0]
+MOON_DONE, SUN_DONE = Y + 196, Y + 260
+C0 = T["cent"][0]
+FILL0, FILL1 = C0 + 48, C0 + 48 + 246
+SCH = T["scholar"][0]
+NX = T["next"][0]
+O = T["outro"][0]
+MERGE = O + 74
 
-# Tonal centre: D. Open fifths and pentatonic colours keep it reverent, not "musical score".
-D2 = 73.42
-PENTA = [587.33, 659.26, 739.99, 880.0, 987.77, 1174.66, 1318.51, 1479.98, 1760.0]
 
-
-# ---------------------------------------------------------------- utilities
+# ---------------------------------------------------------------- DSP helpers
 def secs(frames):
     return frames / FPS
 
@@ -44,8 +55,15 @@ def tvec(n):
     return np.arange(n) / SR
 
 
+def db(g):
+    return 10 ** (g / 20)
+
+
+def norm(x, peak=1.0):
+    return x / (np.max(np.abs(x)) + 1e-12) * peak
+
+
 def stereo(x, pan=0.0):
-    """Equal-power pan; `pan` may be a scalar or a per-sample array in [-1, 1]."""
     a = (np.asarray(pan) + 1) * np.pi / 4
     return np.stack([x * np.cos(a), x * np.sin(a)])
 
@@ -61,309 +79,291 @@ def pink(n):
 
 def brown(n):
     x = np.cumsum(white(n))
-    x = signal.sosfilt(signal.butter(1, 15, "hp", fs=SR, output="sos"), x)
-    return x / (np.max(np.abs(x)) + 1e-9)
+    x = signal.sosfilt(signal.butter(1, 12, "hp", fs=SR, output="sos"), x)
+    return norm(x)
+
+
+def sos(kind, f, order=2):
+    return signal.butter(order, f, kind, fs=SR, output="sos")
 
 
 def bp(x, lo, hi, order=2):
-    return signal.sosfilt(signal.butter(order, [lo, hi], "bandpass", fs=SR, output="sos"), x)
+    return signal.sosfilt(sos("bandpass", [lo, hi], order), x)
 
 
 def lp(x, f, order=2):
-    return signal.sosfilt(signal.butter(order, f, "lowpass", fs=SR, output="sos"), x)
+    return signal.sosfilt(sos("lowpass", f, order), x)
 
 
 def hp(x, f, order=2):
-    return signal.sosfilt(signal.butter(order, f, "highpass", fs=SR, output="sos"), x)
+    return signal.sosfilt(sos("highpass", f, order), x)
 
 
-def sweep_bp(x, f_curve, q=1.4, block=256):
-    """Time-varying resonant band-pass (block-wise biquad with carried state)."""
+def sweep_bp(x, f_curve, q=1.3, block=256):
+    """Time-varying band-pass (block-wise biquad, state carried across blocks)."""
     y = np.zeros_like(x)
     zi = np.zeros((1, 2))
     for i in range(0, len(x), block):
-        fc = float(np.clip(f_curve[min(i, len(f_curve) - 1)], 40, SR / 2.3))
+        fc = float(np.clip(f_curve[min(i, len(f_curve) - 1)], 40, SR / 2.4))
         bw = fc / q
-        sos = signal.butter(1, [max(20, fc - bw / 2), min(SR / 2.1, fc + bw / 2)], "bandpass", fs=SR, output="sos")
-        y[i : i + block], zi = signal.sosfilt(sos, x[i : i + block], zi=zi)
+        s = signal.butter(1, [max(20, fc - bw / 2), min(SR / 2.1, fc + bw / 2)], "bandpass", fs=SR, output="sos")
+        y[i : i + block], zi = signal.sosfilt(s, x[i : i + block], zi=zi)
     return y
 
 
 def env_ar(n, attack_frac=0.6, curve=2.0):
-    a = int(n * attack_frac)
-    up = np.linspace(0, 1, a) ** curve
-    down = np.linspace(1, 0, n - a) ** (curve * 0.8)
-    return np.concatenate([up, down])
+    a = max(1, int(n * attack_frac))
+    return np.concatenate([np.linspace(0, 1, a) ** curve, np.linspace(1, 0, n - a) ** (curve * 0.8)])
 
 
-def norm(x, peak=1.0):
-    m = np.max(np.abs(x)) + 1e-12
-    return x / m * peak
-
-
-def db(g):
-    return 10 ** (g / 20)
-
-
-def hall_ir(seconds=4.5, dark=4500, seed=0):
-    """Synthetic stereo cathedral impulse response (decorrelated, darkening tail)."""
+def space_ir(seconds, dark, seed):
     n = int(seconds * SR)
     t = tvec(n)
     r = np.random.default_rng(seed)
-    ir = []
-    for ch in range(2):
-        noise = r.standard_normal(n) * np.exp(-t * 6.9 / seconds)
-        noise = lp(noise, dark)
+    chans = []
+    for _ in range(2):
+        tail = lp(r.standard_normal(n) * np.exp(-t * 6.9 / seconds), dark)
         early = np.zeros(n)
-        for k in range(14):
-            idx = int(r.uniform(0.004, 0.09) * SR)
-            early[idx] += r.uniform(0.25, 0.7) * (-1) ** k
-        ir.append(norm(noise * 0.9 + early * 0.6))
-    ir = np.stack(ir)
+        for k in range(12):
+            early[int(r.uniform(0.005, 0.08) * SR)] += r.uniform(0.2, 0.6) * (-1) ** k
+        chans.append(norm(tail * 0.9 + early * 0.5))
+    ir = np.stack(chans)
     return ir / np.sqrt(np.sum(ir**2, axis=1, keepdims=True))
 
 
-HALL = hall_ir(4.8, 4200, 1)
-CAVE = hall_ir(2.6, 3000, 2)
+HALL = space_ir(4.0, 3800, 1)
+CAVE = space_ir(2.4, 2600, 2)
 
 
-def convolve(st, ir, wet=0.35):
-    """Stereo (2, n) through stereo IR; returns (2, n + len(ir) - 1)."""
+def convolve(st, ir, wet=0.3):
     mono = st.mean(axis=0)
     w = np.stack([signal.fftconvolve(mono, ir[0]), signal.fftconvolve(mono, ir[1])])
     d = np.zeros_like(w)
     d[:, : st.shape[1]] = st
-    return d * (1 - wet) + w * wet * 2.2
+    return d * (1 - wet) + w * wet * 2.0
 
 
-def pb(st, board):
-    return board(st.astype(np.float32), SR).astype(np.float64)
+def pb(st, board, tail=2.5):
+    """Run a Pedalboard chain with room for reverb tails to ring out, then fade the very end."""
+    padded = np.concatenate([st, np.zeros((2, int(tail * SR)))], axis=1)
+    out = board(padded.astype(np.float32), SR).astype(np.float64)
+    f = int(0.25 * SR)
+    out[:, -f:] *= np.linspace(1, 0, f) ** 2
+    return out
 
 
 class Mix:
     def __init__(self):
-        self.stems = {k: np.zeros((2, N + SR * 6)) for k in ("bed", "fx", "impact", "tonal", "detail")}
+        self.bus = np.zeros((2, N + SR * 6))
 
-    def add(self, stem, t_sec, st, gain_db=0.0):
+    def add(self, t_sec, st, gain_db):
         s = int(t_sec * SR)
         if s < 0:
-            st = st[:, -s:]
-            s = 0
-        e = min(self.stems[stem].shape[1], s + st.shape[1])
-        self.stems[stem][:, s:e] += st[:, : e - s] * db(gain_db)
+            st, s = st[:, -s:], 0
+        e = min(self.bus.shape[1], s + st.shape[1])
+        self.bus[:, s:e] += st[:, : e - s] * db(gain_db)
 
 
-# ---------------------------------------------------------------- instruments
-def impact(weight=1.0, bright=1.0):
-    """Trailer hit: sub drop + body thump + transient crack + inharmonic metal bloom."""
-    n = int(5.5 * SR)
-    t = tvec(n)
-    f = 30 + 48 * np.exp(-t * 3.2)
-    sub = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 1.6) * np.clip(t / 0.004, 0, 1)
-    sub = np.tanh(sub * 1.8) * 0.9
-    body = lp(brown(n), 380) * np.exp(-t * 9) * 2.2
-    crack = hp(white(n), 2500) * np.exp(-t * 160) * 0.55 * bright
-    partials = [92.5, 138.6, 207.7, 277.2, 369.9, 555.1]
-    metal = sum(np.sin(2 * np.pi * p * t + rng.uniform(0, 6)) * np.exp(-t * (0.9 + i * 0.35)) / (i + 1.4) for i, p in enumerate(partials))
-    metal *= np.clip(t / 0.01, 0, 1) * 0.35 * bright
-    st = stereo(sub * weight + body * weight, 0) + stereo(crack, 0.15) + np.stack([metal, np.roll(metal, 90)])
-    return convolve(st, HALL, wet=0.32)
-
-
-def reverse_swell(seconds=1.6, bright=1.0):
-    """Reversed reverb tail that sucks into a hit."""
-    n = int(0.5 * SR)
-    burst = (hp(white(n), 300) * np.exp(-tvec(n) * 30) * bright + lp(brown(n), 500) * np.exp(-tvec(n) * 12))
-    tail = convolve(stereo(burst), HALL, wet=1.0)[:, : int(seconds * SR)]
-    tail = tail[:, ::-1] * np.linspace(0, 1, tail.shape[1]) ** 1.5
-    return norm(tail, 0.9)
-
-
-def whoosh(seconds=1.2, pan_from=-0.8, pan_to=0.8, lo=250, hi=3200, peak=0.62, tone=True):
-    """Doppler pass-by: swept resonant noise + gliding tonal core + air, short room."""
+# ---------------------------------------------------------------- sound sources (all non-musical)
+def thud(weight=1.0, seconds=2.2, wet=0.25):
+    """Earth/stone impact: low-passed noise body, short mid knock, faint grit. No pitched tones."""
     n = int(seconds * SR)
-    x = pink(n)
+    t = tvec(n)
+    low = lp(brown(n), 110, 4) * np.exp(-t * 3.2) * np.clip(t / 0.004, 0, 1)
+    knock = bp(white(n), 120, 650) * np.exp(-t * 26) * 0.55
+    grit = lp(hp(white(n), 2000), 8000) * np.exp(-t * 120) * 0.12
+    x = norm(low) * weight + norm(knock) * 0.6 + grit
+    return convolve(stereo(norm(x)), HALL, wet)
+
+
+def air_ring(seconds=1.4, pan_from=-0.5, pan_to=0.6):
+    """Expanding pressure wave: swirling air that opens out and fades."""
+    n = int(seconds * SR)
+    t = tvec(n)
+    am = 0.65 + 0.35 * np.sin(2 * np.pi * np.cumsum(9 - 6 * t / seconds) / SR)
+    x = sweep_bp(pink(n), 1400 - 900 * (t / seconds), q=1.0) * am * np.exp(-t * 2.4) * np.clip(t / 0.03, 0, 1)
+    return convolve(stereo(norm(x), np.linspace(pan_from, pan_to, n)), HALL, 0.35)
+
+
+def swell(seconds, lo=200, hi=1600, peak=0.75, pan=0.0):
+    """Breath-like air swell (noise only)."""
+    n = int(seconds * SR)
     pos = np.linspace(0, 1, n)
-    f_curve = lo * (hi / lo) ** np.interp(pos, [0, peak, 1], [0, 1, 0.35])
-    body = sweep_bp(x, f_curve, q=1.1)
-    air = lp(hp(white(n), 4000), 11000) * 0.045
-    e = env_ar(n, peak, 2.2)
-    mono = (body + air) * e
-    if tone:
-        g = 160 * (2.6 ** np.interp(pos, [0, peak, 1], [0, 1, 0.6]))
-        mono += np.sin(2 * np.pi * np.cumsum(g) / SR) * e**2 * 0.08
-    st = stereo(norm(mono), np.linspace(pan_from, pan_to, n))
-    return pb(st, Pedalboard([HighpassFilter(90), LowpassFilter(12000), Reverb(room_size=0.55, damping=0.6, wet_level=0.22, dry_level=0.85, width=1.0)]))
+    x = sweep_bp(pink(n), lo * (hi / lo) ** np.interp(pos, [0, peak, 1], [0, 1, 0.5]), q=0.9) * env_ar(n, peak, 1.8)
+    return pb(stereo(norm(x), pan), Pedalboard([LowpassFilter(9000), Reverb(room_size=0.75, damping=0.7, wet_level=0.3, dry_level=0.8, width=1)]))
 
 
-def riser(seconds, top=1.0):
-    """Shepard-style tonal riser + swelling noise, ending at full tension."""
+def reverse_swell(seconds=0.8):
+    n = int(0.45 * SR)
+    burst = hp(white(n), 250) * np.exp(-tvec(n) * 28) + lp(brown(n), 450) * np.exp(-tvec(n) * 10)
+    tail = convolve(stereo(burst), HALL, 1.0)[:, : int(seconds * SR)]
+    tail = tail[:, ::-1] * np.linspace(0, 1, tail.shape[1]) ** 1.6
+    return pb(norm(tail, 0.9), Pedalboard([LowpassFilter(8000)]))
+
+
+def whoosh(seconds=1.2, pan_from=-0.7, pan_to=0.7, lo=220, hi=2600, peak=0.6):
+    """Air pass-by: swept noise with doppler-like pan."""
     n = int(seconds * SR)
-    t = tvec(n)
-    pos = t / seconds
-    out = np.zeros(n)
-    for k in range(6):
-        base = D2 * 2 ** k
-        f = base * 2 ** (pos * 1.0)
-        lf = np.log2(f / D2) / 6
-        amp = np.exp(-((lf - 0.5) ** 2) / 0.05)
-        out += np.sin(2 * np.pi * np.cumsum(f) / SR) * amp
-    trem = 1 + 0.25 * np.sin(2 * np.pi * np.cumsum(2 + pos**2 * 14) / SR)
-    tonal = out * trem * pos**1.6
-    noise = lp(sweep_bp(pink(n), 180 * 25 ** pos, q=0.9), 9000) * pos**2.2 * 0.9
-    st = stereo(norm(tonal) * 0.5 + norm(noise) * 0.6 * top)
-    st[1] = np.roll(st[1], 240)
-    return pb(st, Pedalboard([Chorus(rate_hz=0.4, depth=0.3, mix=0.4), Reverb(room_size=0.8, wet_level=0.3, dry_level=0.8, width=1)]))
+    pos = np.linspace(0, 1, n)
+    body = sweep_bp(pink(n), lo * (hi / lo) ** np.interp(pos, [0, peak, 1], [0, 1, 0.35]), q=1.1)
+    air = lp(hp(white(n), 3500), 9000) * 0.035
+    x = norm((body + air) * env_ar(n, peak, 2.2))
+    return pb(stereo(x, np.linspace(pan_from, pan_to, n)), Pedalboard([HighpassFilter(90), LowpassFilter(10000), Reverb(room_size=0.5, damping=0.7, wet_level=0.2, dry_level=0.85, width=1)]))
 
 
-def bell(freq, seconds=4.0, ratio=3.5, index=2.2):
-    """FM bell with inharmonic overtones."""
+def wind(seconds, seed=3, lo=250, hi=800):
     n = int(seconds * SR)
-    t = tvec(n)
-    idx = index * np.exp(-t * 3)
-    mod = np.sin(2 * np.pi * freq * ratio * t) * idx
-    car = np.sin(2 * np.pi * freq * t + mod) * np.exp(-t * 1.1)
-    car += 0.3 * np.sin(2 * np.pi * freq * 2.76 * t) * np.exp(-t * 2.4)
-    car *= np.clip(t / 0.002, 0, 1)
-    return car
-
-
-def sparkle(seconds, pan_from, pan_to, density=55, lo=1800, hi=6200, seed=0):
-    """Granular glints following a light sweep across the frame."""
-    n = int(seconds * SR)
-    out = np.zeros((2, n + SR))
     r = np.random.default_rng(seed)
-    count = int(density * seconds)
-    for k in range(count):
-        pos = (k + r.uniform(0, 1)) / count
+    slow = lambda f: norm(signal.sosfilt(signal.butter(1, f, "lp", fs=SR, output="sos"), r.standard_normal(n)))
+    gust = 0.45 + 0.55 * slow(0.35) ** 2
+    fc = lo + (hi - lo) * slow(0.2) ** 2
+    x = sweep_bp(pink(n), fc, q=1.5) * gust
+    return norm(np.stack([x, np.roll(x, 1300)]))
+
+
+def noise_riser(seconds, top=1.0):
+    """Tension built from wind and pressure only (no tones)."""
+    n = int(seconds * SR)
+    pos = np.linspace(0, 1, n)
+    hiss = sweep_bp(pink(n), 160 * 22 ** pos, q=0.9) * pos**2.0
+    press = lp(brown(n), 140, 4) * pos**1.4
+    flutter = 1 + 0.18 * np.sin(2 * np.pi * np.cumsum(1.5 + pos**2 * 9) / SR)
+    x = (norm(hiss) * 0.7 * top + norm(press) * 0.6) * flutter
+    st = np.stack([x, np.roll(x, 320)])
+    return pb(norm(st), Pedalboard([LowpassFilter(8500), Reverb(room_size=0.7, damping=0.7, wet_level=0.25, dry_level=0.85, width=1)]))
+
+
+def sand(seconds, pan_from=-0.6, pan_to=0.6, density=420, seed=0, bright=1.0):
+    """Granular sand trickle that travels with a light sweep."""
+    n = int(seconds * SR)
+    r = np.random.default_rng(seed)
+    out = np.zeros((2, n + 2000))
+    k = int(density * seconds)
+    for i in range(k):
+        pos = r.uniform(0, 1)
         start = int(pos * n)
-        f = float(np.clip(r.choice(PENTA) * r.choice([2, 2, 3, 4]), lo, hi))
-        g = bell(f, 0.35, ratio=r.uniform(1.4, 2.8), index=1.2) * r.uniform(0.25, 1) * np.sin(np.pi * pos) ** 0.6
-        pan = pan_from + (pan_to - pan_from) * pos + r.uniform(-0.15, 0.15)
-        out[:, start : start + len(g)] += stereo(g, np.clip(pan, -1, 1))
-    return convolve(pb(out, Pedalboard([HighpassFilter(1200), LowpassFilter(11000)])), HALL, wet=0.55)
+        g = int(r.uniform(0.002, 0.006) * SR)
+        grain = r.standard_normal(g) * np.hanning(g) * r.uniform(0.1, 1) * np.sin(np.pi * pos) ** 0.7
+        out[:, start : start + g] += stereo(grain, np.clip(pan_from + (pan_to - pan_from) * pos + r.uniform(-0.2, 0.2), -1, 1))
+    out = np.stack([bp(c, 1800, 6500 * bright) for c in out])
+    return convolve(norm(out), HALL, 0.25)
 
 
-def tick(tone=1.0):
-    """Mechanical clock tick: resonant click with a small wooden body."""
-    n = int(0.12 * SR)
-    t = tvec(n)
-    imp = white(n) * np.exp(-t * 900)
-    click = bp(imp, 1800 * tone, 4200 * tone) * 3
-    body = np.sin(2 * np.pi * 620 * tone * t) * np.exp(-t * 90) * 0.4
-    return norm(lp(click, 9000) + body)
-
-
-def plink(freq):
-    """Soft mallet: sine + bright partial + felt click."""
-    n = int(1.6 * SR)
-    t = tvec(n)
-    x = np.sin(2 * np.pi * freq * t) * np.exp(-t * 3.2) + 0.25 * np.sin(2 * np.pi * freq * 4 * t) * np.exp(-t * 12)
-    x += hp(white(n), 3000) * np.exp(-t * 400) * 0.15
-    return x * np.clip(t / 0.002, 0, 1)
-
-
-def pad(freqs, seconds, cutoff=900, voices=5, detune=0.009, attack=2.5, release=3.0, formant=False):
-    """Supersaw pad (detuned voices), filtered; optional vocal formants ('aah')."""
-    n = int(seconds * SR)
-    t = tvec(n)
-    L = np.zeros(n)
-    R = np.zeros(n)
-    for f in freqs:
-        for v in range(voices):
-            d = 1 + detune * (v - (voices - 1) / 2) / ((voices - 1) / 2 or 1)
-            ph = rng.uniform(0, 1)
-            saw = 2 * ((f * d * t + ph) % 1) - 1
-            (L if v % 2 == 0 else R)[:] += saw
-            (R if v % 2 == 0 else L)[:] += saw * 0.6
-    x = np.stack([L, R])
-    if formant:
-        x = np.stack([bp(c, 650, 800) * 1.0 + bp(c, 1050, 1250) * 0.6 + bp(c, 2500, 2800) * 0.25 for c in x])
-    else:
-        x = np.stack([lp(c, cutoff, 4) for c in x])
-    e = np.minimum(np.clip(t / attack, 0, 1), np.clip((seconds - t) / release, 0, 1)) ** 1.6
-    x = norm(x * e)
-    return pb(x, Pedalboard([LowpassFilter(cutoff * 3 if not formant else 5200), Chorus(rate_hz=0.25, depth=0.4, centre_delay_ms=9, mix=0.5), Reverb(room_size=0.9, damping=0.7, wet_level=0.4, dry_level=0.7, width=1)]))
-
-
-def wind(seconds, seed=3):
-    n = int(seconds * SR)
+def pebble(pan=0.4, seed=0):
+    """Small stone dropping: two or three decaying taps."""
     r = np.random.default_rng(seed)
-    lfo = signal.sosfilt(signal.butter(1, 0.35, "lp", fs=SR, output="sos"), r.standard_normal(n))
-    lfo = 0.45 + 0.55 * norm(lfo) ** 2
-    fc = 300 + 500 * norm(signal.sosfilt(signal.butter(1, 0.2, "lp", fs=SR, output="sos"), r.standard_normal(n))) ** 2
-    x = sweep_bp(pink(n), fc, q=1.6) * lfo
-    st = np.stack([x, np.roll(x, 1300)])
-    return norm(st)
+    n = int(0.5 * SR)
+    x = np.zeros(n)
+    t0, amp = 0.0, 1.0
+    for _ in range(r.integers(2, 4)):
+        s = int(t0 * SR)
+        g = int(0.012 * SR)
+        tap = bp(r.standard_normal(g), r.uniform(900, 1500), r.uniform(2400, 3600)) * np.exp(-tvec(g) * 380)
+        x[s : s + g] += tap * amp
+        t0 += r.uniform(0.07, 0.12) * amp
+        amp *= 0.45
+    knock = lp(r.standard_normal(n), 380) * np.exp(-tvec(n) * 60) * 0.25
+    return convolve(stereo(norm(x + knock), pan), CAVE, 0.3)
 
 
-def drip(freq=900):
-    n = int(0.25 * SR)
+def tick(alt=False):
+    """Mechanical clock tick built from a filtered noise click (no pitched body)."""
+    n = int(0.08 * SR)
     t = tvec(n)
-    f = freq * (1 + 1.4 * np.clip(t / 0.03, 0, 1))
-    x = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 38)
-    return x
+    click = bp(white(n), 1500 if alt else 1900, 4200 if alt else 5200) * np.exp(-t * 700)
+    body = bp(white(n), 300, 900) * np.exp(-t * 160) * 0.35
+    return norm(click + body)
+
+
+def paper(seconds=0.9, pan=0.0):
+    """Page / parchment rustle."""
+    n = int(seconds * SR)
+    t = tvec(n)
+    flutter = np.abs(signal.sosfilt(signal.butter(1, 18, "lp", fs=SR, output="sos"), white(n)))
+    rustle = bp(white(n), 1200, 5200) * norm(flutter) * env_ar(n, 0.35, 1.4)
+    crackle = np.zeros(n)
+    idx = rng.integers(0, n, int(seconds * 60))
+    crackle[idx] = rng.uniform(-1, 1, len(idx))
+    crackle = lp(hp(crackle, 2000), 9000) * env_ar(n, 0.35, 1.0)
+    return convolve(stereo(norm(rustle + crackle * 0.5), pan), CAVE, 0.15)
+
+
+def drip(f0=900):
+    """Water drop in the cave (natural sound)."""
+    n = int(0.22 * SR)
+    t = tvec(n)
+    f = f0 * (1 + 1.3 * np.clip(t / 0.028, 0, 1))
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 40)
+
+
+def whirr(seconds, rate_hz, pan, lo=280, hi=900):
+    """Soft rotating air: band-passed noise with slow amplitude rotation."""
+    n = int(seconds * SR)
+    t = tvec(n)
+    x = bp(pink(n), lo, hi) * (0.6 + 0.4 * np.sin(2 * np.pi * rate_hz * t))
+    return stereo(norm(x), pan)
 
 
 # ---------------------------------------------------------------- arrangement
 mix = Mix()
 t = tvec(N)
 
-# 1. Atmosphere — sub rumble + open-fifth pad, breathing with the story.
-rumble = lp(brown(N), 70, 4)
-rumble = norm(rumble) * (0.6 + 0.4 * np.sin(2 * np.pi * t / 11) ** 2)
-mix.add("bed", 0, stereo(rumble), -17)
-bed_pad = pad([D2, D2 * 1.5, D2 * 2, D2 * 3], DUR, cutoff=700, attack=1.2, release=3.5)
-curve = np.interp(t, [0, 4, secs(T["sky"]), secs(SKY_END), secs(T["cent"]), secs(FILL1), secs(T["scholar"]), secs(T["outro"]), DUR],
-                  [0.75, 0.55, 0.4, 0.15, 0.55, 0.85, 0.5, 0.6, 0.0])
-mix.add("bed", 0, bed_pad[:, :N] * curve, -21)
+# Room tone: earth rumble + faint night air, following the story (cave louder in the sky beat).
+room = norm(lp(brown(N), 120, 4)) * 0.8 + norm(bp(pink(N), 1800, 5200)) * 0.05
+mood = np.interp(t, [0, 3, secs(V), secs(S0), secs(S0 + 60), secs(S1), secs(C0), secs(FILL1), secs(SCH), secs(O), DUR],
+                 [0.8, 0.6, 0.5, 0.8, 1.0, 0.5, 0.6, 0.85, 0.5, 0.6, 0.0])
+mix.add(0, np.stack([room, np.roll(room, 2400)]) * mood, -27)
 
-# 2. HOOK — "300" hits on frame 0; "+9" arrives on a reverse swell into a bigger hit.
-mix.add("impact", 0, impact(1.0, 0.9), -5)
-mix.add("detail", secs(4), sparkle(1.4, -0.7, 0.4, density=40, seed=11), -15)
-mix.add("fx", secs(24) - 0.75, reverse_swell(0.75, 1.2), -9)
-mix.add("impact", secs(24), impact(1.15, 1.2), -4)
-mix.add("tonal", secs(24), stereo(bell(D2 * 8, 5.0) * 0.6 + bell(D2 * 12, 5.0) * 0.4, 0.35), -17)
-mix.add("detail", secs(34), sparkle(1.4, 0.0, 0.8, density=45, seed=12), -15)
-mix.add("fx", secs(54), whoosh(0.9, 0.5, -0.4, 400, 2600, 0.5), -19)  # question appears
-mix.add("bed", secs(80), pad([D2 * 2, D2 * 3, D2 * 4.5], 5.5, cutoff=1400), -24)
+# HOOK — "300" lands in the sun, "+9" arrives on a breath of air, three lines of text.
+mix.add(secs(H), thud(1.0, 2.6, 0.3), -15)
+mix.add(secs(H), swell(2.4, 160, 1100, 0.3), -24)                     # solar flare of warm air
+mix.add(secs(H + 4), sand(1.4, -0.6, 0.3, seed=1), -27)                # light sweep across 300
+mix.add(secs(H + 24) - 0.7, reverse_swell(0.7), -21)
+mix.add(secs(H + 24), thud(0.8, 2.0, 0.28), -17)
+mix.add(secs(H + 24), air_ring(1.4, 0.2, 0.8), -26)                    # the ring: present but soft
+mix.add(secs(H + 34), sand(1.3, 0.2, 0.8, seed=2), -28)
+mix.add(secs(H + 32), whoosh(0.8, -0.4, 0.3, 300, 2000), -27)          # "The Qur'an didn't say 309."
+mix.add(secs(H + 70), swell(0.6, 400, 1500, 0.2, 0.2), -30)            # line dissolves
+mix.add(secs(H + 80), whoosh(0.8, 0.4, -0.3, 300, 2000), -27)          # "It said 300... and 9."
+mix.add(secs(H + 118), thud(0.6, 1.8, 0.35), -21)                      # "One number. Two calendars."
+mix.add(secs(H + 116), swell(1.8, 140, 900, 0.35), -25)
+mix.add(secs(H + 140), sand(1.6, -0.5, 0.5, seed=3), -28)
 
-# 3. VERSE — card rises; the two numbers are swept with light.
-mix.add("fx", secs(T["verse"] - 10), whoosh(1.3, -0.6, 0.6, 220, 2400, 0.62), -14)
-mix.add("bed", secs(T["verse"] + 20), pad([D2 * 2, D2 * 3, D2 * 4, D2 * 6], 8.5, cutoff=1100, attack=2.0), -24)
-mix.add("tonal", secs(T["verse"] + 104), stereo(bell(PENTA[0], 4.5) * 0.7 + bell(PENTA[3], 4.5) * 0.4, -0.2), -19)
-mix.add("detail", secs(T["verse"] + 110), sparkle(2.0, -0.6, 0.6, density=50, seed=21), -14)
+# VERSE — the card tilts up; the two phrases are swept with light.
+mix.add(secs(V - 12), whoosh(1.3, -0.6, 0.6, 220, 2200), -21)
+mix.add(secs(V + 18), swell(1.4, 180, 900, 0.5), -27)
+mix.add(secs(V + 24), paper(0.8, -0.1), -29)
+mix.add(secs(V + 110), sand(1.0, -0.4, 0.4, seed=4), -27)
+mix.add(secs(V + 130), sand(1.0, -0.4, 0.4, seed=5), -28)
 
-# 4. SKY — inside the cave (wind, drips), then the camera rushes out into open air.
-cave_len = secs(SKY_END - T["sky"]) + 1.5
+# SKY — inside the cave: wind and drips; the camera rushes out into the open night.
+cave_len = secs(S1 - S0) + 1.6
 w = wind(cave_len)
-w *= np.interp(tvec(w.shape[1]), [0, 0.8, cave_len - 2.2, cave_len - 0.6, cave_len], [0, 1, 1.4, 2.2, 0])
-mix.add("bed", secs(T["sky"]) - 0.4, convolve(w, CAVE, wet=0.3), -17)
-for k, (fr, f) in enumerate([(T["sky"] + 16, 980), (T["sky"] + 58, 760), (T["sky"] + 92, 1120)]):
-    mix.add("detail", secs(fr), convolve(stereo(drip(f), [-0.4, 0.3, -0.1][k]), CAVE, wet=0.6), -16)
-mix.add("fx", secs(T["sky"] - 12), whoosh(1.4, 0.5, -0.5, 180, 1600, 0.6), -16)
-mix.add("fx", secs(T["sky"] + 40), riser(secs(SKY_END - T["sky"] - 40), top=0.8), -16)
-mix.add("fx", secs(SKY_END - 34), whoosh(2.2, -0.2, 0.2, 120, 5200, 0.55, tone=True), -9)  # the push-through
-mix.add("tonal", secs(SKY_END - 6), pad([D2 * 4, D2 * 6, D2 * 9, D2 * 12], 7.0, formant=True, attack=0.6, release=4), -17)  # open sky "aah"
-mix.add("detail", secs(SKY_END - 4), sparkle(2.6, -0.9, 0.9, density=60, seed=31), -14)
+w *= np.interp(tvec(w.shape[1]), [0, 0.8, cave_len - 2.4, cave_len - 0.6, cave_len], [0, 1, 1.3, 2.0, 0])
+mix.add(secs(S0) - 0.4, convolve(w, CAVE, 0.3), -23)
+for fr, f0, pan in ((S0 + 16, 980, -0.4), (S0 + 58, 760, 0.3), (S0 + 92, 1120, -0.1)):
+    mix.add(secs(fr), convolve(stereo(drip(f0), pan), CAVE, 0.55), -22)
+mix.add(secs(S0 + 40), pebble(-0.5, seed=7), -28)
+mix.add(secs(S0 - 12), whoosh(1.4, 0.5, -0.5, 180, 1500), -21)
+mix.add(secs(S0 + 40), noise_riser(secs(S1 - S0 - 40), top=0.8), -22)
+mix.add(secs(S1 - 34), whoosh(2.2, -0.2, 0.2, 110, 4200, 0.55), -16)   # the push-through
+mix.add(secs(S1 - 4), swell(3.5, 120, 700, 0.15), -24)                # open night air settles
+mix.add(secs(S1 - 2), sand(2.4, -0.9, 0.9, density=260, seed=6, bright=0.8), -29)
 
-# 5. TWO YEARS — orbits hum, moon completes (bell), the 11-day gap holds, sun completes.
-orb = np.zeros((2, int(secs(300) * SR)))
-ot = tvec(orb.shape[1])
-gold = np.sin(2 * np.pi * D2 * 2 * ot) + 0.3 * np.sin(2 * np.pi * D2 * 4.01 * ot)
-silver = np.sin(2 * np.pi * D2 * 3 * ot) + 0.3 * np.sin(2 * np.pi * D2 * 6.02 * ot)
-oe = np.interp(ot, [0, 1.2, 2.2, 9.2, 10.0], [0, 0, 1, 1, 0])
-orb += stereo(gold * oe, -0.55) + stereo(silver * oe * (1 + 0.15 * np.sin(2 * np.pi * 0.7 * ot)), 0.55)
-mix.add("tonal", secs(T["years"]), pb(orb, Pedalboard([Chorus(rate_hz=0.2, depth=0.5, mix=0.6), Reverb(room_size=0.85, wet_level=0.4)])), -27)
-mix.add("fx", secs(T["years"] - 12), whoosh(1.3, -0.4, 0.5, 260, 2800, 0.6), -15)
-mix.add("tonal", secs(MOON_DONE), convolve(stereo(bell(PENTA[4], 5.0) + 0.5 * bell(PENTA[7], 5.0), 0.55), HALL, 0.4), -14)
-mix.add("detail", secs(MOON_DONE + 2), sparkle(1.0, 0.4, 0.8, density=30, seed=41), -18)
-mix.add("tonal", secs(MOON_DONE + 6), stereo(np.sin(2 * np.pi * PENTA[0] * tvec(int(1.4 * SR))) * np.exp(-tvec(int(1.4 * SR)) * 1.5), -0.55), -24)  # "11 days left"
-mix.add("tonal", secs(SUN_DONE), convolve(stereo(bell(PENTA[0], 5.0) + 0.5 * bell(PENTA[3], 5.0), -0.55), HALL, 0.4), -14)
+# TWO YEARS — orbits turn as soft rotating air; completions are released breaths, not chimes.
+mix.add(secs(Y - 12), whoosh(1.3, -0.4, 0.5, 240, 2400), -21)
+span = secs(SUN_DONE + 30 - (Y + 36))
+mix.add(secs(Y + 36), whirr(span, 0.55, -0.55, 260, 760) * np.interp(tvec(int(span * SR)), [0, 1.2, span - 1.2, span], [0, 1, 1, 0]), -32)
+mix.add(secs(Y + 36), whirr(span, 0.6, 0.55, 380, 1100) * np.interp(tvec(int(span * SR)), [0, 1.2, span - 1.2, span], [0, 1, 1, 0]), -32)
+mix.add(secs(MOON_DONE), swell(1.0, 500, 2200, 0.12, 0.55), -25)
+mix.add(secs(MOON_DONE + 2), sand(0.8, 0.4, 0.8, density=300, seed=8), -29)
+mix.add(secs(MOON_DONE + 6), thud(0.4, 1.2, 0.3), -29)                # "11 DAYS LEFT"
+mix.add(secs(SUN_DONE), swell(1.2, 260, 1500, 0.12, -0.55), -24)
+mix.add(secs(SUN_DONE), thud(0.5, 1.6, 0.3), -26)
 
-# 6. CENTURIES — tension riser across the fill, clock ticks, nine ascending notes, the +9 hit.
-mix.add("fx", secs(T["cent"] - 12), whoosh(1.2, 0.5, -0.5, 240, 2600, 0.6), -15)
-mix.add("fx", secs(FILL0), riser(secs(FILL1 - FILL0)), -13)
+# CENTURIES — rising wind, a clock counting decades, nine pebbles for nine extra years, the reveal.
+mix.add(secs(C0 - 12), whoosh(1.2, 0.5, -0.5, 240, 2400), -21)
+mix.add(secs(FILL0), noise_riser(secs(FILL1 - FILL0)), -21)
 
 
 def bez(x1, y1, x2, y2):
@@ -381,64 +381,59 @@ def bez(x1, y1, x2, y2):
 
 ease = bez(0.65, 0, 0.35, 1)
 SOLAR, LUNAR = 365.2422, 12 * 29.530589
-span = 300 * SOLAR
 ps = pm = 0
-tk = tick(1.0)
-tk2 = tick(0.82)
 extra = 0
+tk, tk2 = tick(False), tick(True)
 for fr in range(FILL0, FILL1 + 1):
-    d = span * ease((fr - FILL0) / (FILL1 - FILL0))
+    d = 300 * SOLAR * ease((fr - FILL0) / (FILL1 - FILL0))
     s = min(300, int(d / SOLAR + 1e-9))
     m = min(309, int(d / LUNAR + 1e-9))
     if s // 10 > ps // 10:
-        mix.add("detail", secs(fr), stereo(tk if (s // 10) % 2 else tk2, -0.35), -21)
+        mix.add(secs(fr), stereo(tk if (s // 10) % 2 else tk2, -0.35), -30)
     if m > 300 and m > pm:
-        mix.add("tonal", secs(fr), convolve(stereo(plink(PENTA[min(extra, 8)]), 0.45), HALL, 0.35), -15)
+        mix.add(secs(fr), pebble(0.35 + extra * 0.05, seed=100 + extra), -23)
         extra += 1
     ps, pm = s, m
-mix.add("fx", secs(FILL1) - 0.6, reverse_swell(0.6, 1.3), -8)
-mix.add("impact", secs(FILL1 + 2), impact(1.25, 1.3), -3)
-mix.add("tonal", secs(FILL1 + 2), pad([D2 * 2, D2 * 3, D2 * 4, D2 * 5.04, D2 * 6], 9.0, formant=True, attack=0.25, release=5), -16)
-mix.add("detail", secs(FILL1 + 4), sparkle(2.2, -0.2, 0.9, density=70, seed=51), -13)
+mix.add(secs(FILL1) - 0.6, reverse_swell(0.6), -20)
+mix.add(secs(FILL1 + 2), thud(1.1, 2.8, 0.32), -13)
+mix.add(secs(FILL1 + 2), air_ring(1.6, 0.0, 0.7), -26)
+mix.add(secs(FILL1 + 6), sand(2.2, -0.6, 0.8, density=380, seed=9), -26)   # light sweep over the grids
+mix.add(secs(FILL1 + 20), swell(2.4, 140, 800, 0.3), -26)
 
-# 7. SCHOLAR / NEXT VERSE — quieter, reverent; soft transitions, single bells on key lines.
-mix.add("fx", secs(T["scholar"] - 12), whoosh(1.5, -0.5, 0.4, 200, 1800, 0.6, tone=False), -17)
-mix.add("tonal", secs(T["scholar"] + 44), convolve(stereo(bell(PENTA[0] / 2, 6.0), 0), HALL, 0.45), -21)
-mix.add("bed", secs(T["scholar"]), pad([D2, D2 * 1.5, D2 * 2.0, D2 * 2.52], 9.5, cutoff=800, attack=2.0), -24)
-mix.add("fx", secs(T["next"] - 12), whoosh(1.5, 0.4, -0.4, 200, 1800, 0.6, tone=False), -17)
-mix.add("tonal", secs(T["next"] + 14), pad([D2 * 2, D2 * 3, D2 * 4], 6.5, formant=True, attack=1.5, release=3), -21)
-mix.add("detail", secs(T["next"] + 14), sparkle(1.6, 0.7, -0.7, density=30, seed=61), -19)  # Arabic reveals right-to-left
+# SCHOLAR / NEXT VERSE — quiet and reverent.
+mix.add(secs(SCH - 12), whoosh(1.5, -0.5, 0.4, 200, 1700), -23)
+mix.add(secs(SCH + 22), paper(1.1, 0.1), -26)
+mix.add(secs(SCH + 40), swell(3.0, 140, 700, 0.4), -29)
+mix.add(secs(NX - 12), whoosh(1.5, 0.4, -0.4, 200, 1700), -23)
+mix.add(secs(NX + 12), swell(2.6, 160, 900, 0.4), -27)
+mix.add(secs(NX + 14), sand(1.8, 0.7, -0.7, density=240, seed=10), -29)    # follows the Arabic, right to left
 
-# 8. OUTRO — sun and moon converge (swell), bloom hit, rays, long decay into silence.
-mix.add("fx", secs(T["outro"] - 12), whoosh(1.4, -0.3, 0.3, 200, 2200, 0.6), -16)
-mix.add("fx", secs(T["outro"] + 4), riser(secs(MERGE - T["outro"] - 4), top=0.5), -16)
-mix.add("fx", secs(MERGE) - 1.0, reverse_swell(1.0, 1.0), -8)
-mix.add("impact", secs(MERGE), impact(1.0, 0.8), -5)
-mix.add("tonal", secs(MERGE), pad([D2 * 2, D2 * 3, D2 * 4, D2 * 5.04, D2 * 6, D2 * 9], secs(TOTAL_FRAMES - MERGE) + 0.5, formant=True, attack=0.4, release=2.6), -14)
-mix.add("tonal", secs(MERGE), convolve(stereo(bell(PENTA[0], 6) * 0.7 + bell(PENTA[3], 6) * 0.5 + bell(PENTA[5], 6) * 0.3, 0), HALL, 0.45), -14)
-mix.add("detail", secs(MERGE + 4), sparkle(3.5, -0.9, 0.9, density=40, seed=71), -15)
+# OUTRO — sun and moon converge on rising wind; a soft deep thud; the air opens and settles to silence.
+mix.add(secs(O - 12), whoosh(1.4, -0.3, 0.3, 200, 2000), -22)
+mix.add(secs(O + 4), noise_riser(secs(MERGE - O - 4), top=0.5), -24)
+mix.add(secs(MERGE) - 0.9, reverse_swell(0.9), -20)
+mix.add(secs(MERGE), thud(1.0, 3.2, 0.38), -15)
+mix.add(secs(MERGE), air_ring(1.8, -0.6, 0.6), -27)
+tail = secs(TOTAL_FRAMES - MERGE) + 1
+ow = wind(tail, seed=11, lo=180, hi=520) * np.interp(tvec(int(tail * SR)), [0, 0.6, tail - 2.2, tail], [0, 1, 0.8, 0])
+mix.add(secs(MERGE), ow, -27)
+mix.add(secs(MERGE + 6), sand(3.2, -0.9, 0.9, density=180, seed=12, bright=0.8), -30)
 
 # ---------------------------------------------------------------- master
-stems = mix.stems
-bus = stems["bed"] + stems["fx"] + stems["impact"] + stems["tonal"] + stems["detail"]
-bus = bus[:, :N]
-fade = np.clip((DUR - t) / 1.6, 0, 1) ** 1.5
-bus *= fade
-master = Pedalboard([
-    HighpassFilter(28),
-    LowpassFilter(17500),
-    HighShelfFilter(cutoff_frequency_hz=8000, gain_db=-3.0),
-    Compressor(threshold_db=-20, ratio=2.2, attack_ms=20, release_ms=250),
-])
-bus = pb(bus, master)
+bus = mix.bus[:, :N] * np.clip((DUR - t) / 1.6, 0, 1) ** 1.5
+bus = pb(bus, tail=0.3, board=Pedalboard([
+    HighpassFilter(30),
+    LowpassFilter(16000),
+    HighShelfFilter(cutoff_frequency_hz=7000, gain_db=-2.5),
+    Compressor(threshold_db=-22, ratio=1.8, attack_ms=25, release_ms=280),
+]))[:, :N]
 meter = pyloudnorm.Meter(SR)
-TARGET, CEIL = -14.0, -1.5
+TARGET, CEIL = -16.0, -2.0
 pre = bus.copy()
 gain = TARGET - meter.integrated_loudness(pre.T)
 for _ in range(6):
-    # JUCE-style limiter applies make-up gain (output ceiling 0 dBFS): pull back to the ceiling,
-    # then correct the input gain from the measured result until the target is met.
-    bus = pb(pre * db(gain), Pedalboard([Limiter(threshold_db=-3.0, release_ms=140)])) * db(CEIL)
+    # JUCE-style limiter adds make-up gain to a 0 dBFS ceiling: pull back to CEIL, correct, repeat.
+    bus = pb(pre * db(gain), Pedalboard([Limiter(threshold_db=-2.0, release_ms=160)]), tail=0.0)[:, : pre.shape[1]] * db(CEIL)
     err = TARGET - meter.integrated_loudness(bus.T)
     if abs(err) < 0.1:
         break
