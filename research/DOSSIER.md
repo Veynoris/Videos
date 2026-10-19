@@ -1,4 +1,4 @@
-# Quran Decoding — Episode 01 Preproduction Dossier
+# [ARCHIVED CANDIDATE] Earth/heaven order (Yūnus 10:61 vs Sabaʾ 34:3) — superseded by EP01 "300… and 9" (see EP01_300_AND_9.md)
 
 **Working title:** *Earth first.*
 **Status:** awaiting approval. Nothing has been rendered beyond a font test.
