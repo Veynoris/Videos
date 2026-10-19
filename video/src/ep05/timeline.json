@@ -1,0 +1,15 @@
+{
+  "_note": "EP05 'Three Shirts' beat boundaries and cues, in frames @30fps. Read by Episode.tsx and scripts/sound_ep05.py. Cues are local to their beat.",
+  "hook": [0, 176],
+  "ex1": [158, 650],
+  "ex2": [632, 1124],
+  "ex3": [1106, 1598],
+  "close": [1580, 1880],
+  "cue": {
+    "hookTunics": 70,
+    "ex1Stain": 14, "ex1Loupe": [196, 300], "ex1Seal": 360,
+    "ex2Panels": 176, "ex2Loupe": [292, 352], "ex2Seal": 400,
+    "ex3Scent": [196, 300], "ex3Haze": [300, 384], "ex3Seal": 404,
+    "closeSeals": 14, "closeArabic": 132, "closeLoop": 250
+  }
+}
