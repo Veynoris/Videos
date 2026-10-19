@@ -1,0 +1,31 @@
+{
+  "_note": "EP03 beat boundaries in frames @30fps. Read by Episode.tsx and scripts/sound_ep03.py.",
+  "hook": [
+    0,
+    214
+  ],
+  "verse": [
+    196,
+    500
+  ],
+  "clues": [
+    482,
+    720
+  ],
+  "test": [
+    702,
+    1500
+  ],
+  "result": [
+    1482,
+    1780
+  ],
+  "signs": [
+    1762,
+    1960
+  ],
+  "outro": [
+    1942,
+    2134
+  ]
+}
