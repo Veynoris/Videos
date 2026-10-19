@@ -416,18 +416,19 @@ mix.add(secs(FILL1 + 20), swell(2.4, 140, 800, 0.3), -26)
 
 # SCHOLAR / NEXT VERSE — quiet and reverent.
 mix.add(secs(SCH - 12), whoosh(1.5, -0.5, 0.4, 200, 1700), -23)
-mix.add(secs(SCH + 8), reverse_swell(1.9), -22)                        # rewinding 653 years
-mix.add(secs(SCH + 8), noise_riser(56 / FPS, top=0.5)[:, ::-1].copy(), -26)
+mix.add(secs(SCH + 8), reverse_swell(3.0), -22)                        # rewinding 653 years
+mix.add(secs(SCH + 8), noise_riser(92 / FPS, top=0.5)[:, ::-1].copy(), -26)
 prev = 2026
-for fr in range(SCH + 8, SCH + 65):                                    # half-centuries rolling back
-    yr = int(2026 - 653 * hk_ease((fr - SCH - 8) / 56))
+for fr in range(SCH + 8, SCH + 101):                                    # half-centuries rolling back
+    yr = int(2026 - 653 * hk_ease((fr - SCH - 8) / 92))
     if yr // 50 < prev // 50:
         mix.add(secs(fr), stereo(tick(True), -0.2), -31)
     prev = yr
-mix.add(secs(SCH + 64), thud(0.7, 2.2, 0.35), -19)                      # arrival: Damascus, 1373
-mix.add(secs(SCH + 88), paper(1.4, 0.0), -24)                           # the manuscript opens
-mix.add(secs(SCH + 110), swell(3.6, 140, 700, 0.4), -29)
-mix.add(secs(SCH + 186), swell(0.9, 500, 2200, 0.3), -31)              # gold rule before the translation
+mix.add(secs(SCH + 100), thud(0.7, 2.2, 0.35), -19)                      # arrival: Damascus, 1373
+mix.add(secs(SCH + 104), swell(2.4, 140, 600, 0.3), -28)                # a breath in Damascus
+mix.add(secs(SCH + 174), paper(1.4, 0.0), -24)                           # the manuscript opens
+mix.add(secs(SCH + 196), swell(3.6, 140, 700, 0.4), -29)
+mix.add(secs(SCH + 272), swell(0.9, 500, 2200, 0.3), -31)              # gold rule before the translation
 mix.add(secs(NX - 12), whoosh(1.5, 0.4, -0.4, 200, 1700), -23)
 mix.add(secs(NX + 12), swell(2.6, 160, 900, 0.4), -27)
 mix.add(secs(NX + 14), sand(1.8, 0.7, -0.7, density=240, seed=10), -29)    # follows the Arabic, right to left

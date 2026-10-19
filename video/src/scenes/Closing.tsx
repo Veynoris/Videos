@@ -10,14 +10,14 @@ import { C, F } from "../lib/theme";
 
 const center: React.CSSProperties = { position: "absolute", left: 0, right: 0, display: "flex", justifyContent: "center" };
 
-const REWIND_END = 64;
+const REWIND_END = 100; // a slower, readable rewind
 
 // 7 — Back to Damascus, 1373: a year counter rewinds from today; then Ibn Kathir's words open
 // on a manuscript card (commentary Arabic in Amiri, distinct from the Qur'anic text face).
 export const Scholar: React.FC = () => {
   const f = useCurrentFrame();
   const year = Math.round(interpolate(f, [8, REWIND_END], [2026, 1373], { ...CLAMP, easing: easeInOut }));
-  const rewindOut = progress(f, 80, 16);
+  const rewindOut = progress(f, 170, 18); // hold "653 years ago. Damascus." for ~2 s
   const speed = Math.sin(Math.PI * Math.min(1, Math.max(0, (f - 8) / (REWIND_END - 8))));
   return (
     <AbsoluteFill>
@@ -58,20 +58,20 @@ export const Scholar: React.FC = () => {
 
       {/* the manuscript */}
       <div style={{ ...center, top: 250 }}>
-        <BlurWords start={84} tokens={[{ t: "Ibn Kathīr" }, { t: "wrote:", italic: true, color: C.sun }]} style={{ fontSize: 66 }} />
+        <BlurWords start={170} tokens={[{ t: "Ibn Kathīr" }, { t: "wrote:", italic: true, color: C.sun }]} style={{ fontSize: 66 }} />
       </div>
-      <Rosette cx={540} cy={830} r={520} opacity={progress(f, 86, 60) * 0.06} speed={-0.05} />
+      <Rosette cx={540} cy={830} r={520} opacity={progress(f, 172, 60) * 0.06} speed={-0.05} />
       <div style={{ ...center, top: 400 }}>
-        <Card p={progress(f, 88, 36)} width={960} style={{ background: "linear-gradient(170deg, rgba(38,32,24,0.78), rgba(18,24,38,0.78))", border: "1px solid rgba(233,185,110,0.28)", padding: "46px 52px 44px" }}>
+        <Card p={progress(f, 174, 36)} width={960} style={{ background: "linear-gradient(170deg, rgba(38,32,24,0.78), rgba(18,24,38,0.78))", border: "1px solid rgba(233,185,110,0.28)", padding: "46px 52px 44px" }}>
           <div style={{ position: "absolute", inset: 12, borderRadius: 26, border: "1px solid rgba(233,185,110,0.14)", pointerEvents: "none" }} />
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
-            <StarMark size={28} p={progress(f, 96, 20)} />
+            <StarMark size={28} p={progress(f, 182, 20)} />
           </div>
-          <Mono p={progress(f, 100, 20)} style={{ color: C.sun, fontSize: 22 }}>
+          <Mono p={progress(f, 186, 20)} style={{ color: C.sun, fontSize: 22 }}>
             Tafsīr Ibn Kathīr · on al-Kahf 18:25
           </Mono>
           <ArabicWords
-            start={110}
+            start={196}
             stagger={5}
             size={56}
             font={F.naskh}
@@ -83,9 +83,9 @@ export const Scholar: React.FC = () => {
               { t: "وازدادوا تسعا", color: C.moon, glow: C.moonGlow },
             ]}
           />
-          <div style={{ height: 1, margin: "22px auto 22px", width: 420 * progress(f, 186, 24), background: `linear-gradient(90deg, transparent, ${C.sun}, transparent)` }} />
+          <div style={{ height: 1, margin: "22px auto 22px", width: 420 * progress(f, 272, 24), background: `linear-gradient(90deg, transparent, ${C.sun}, transparent)` }} />
           <BlurWords
-            start={196}
+            start={282}
             stagger={2}
             dur={16}
             style={{ fontSize: 40, lineHeight: 1.38, fontStyle: "italic" }}
@@ -96,13 +96,13 @@ export const Scholar: React.FC = () => {
               { t: "‘and added nine.’”", color: C.moon },
             ]}
           />
-          <Mono p={progress(f, 250, 20)} style={{ marginTop: 28, fontSize: 21 }}>
+          <Mono p={progress(f, 336, 20)} style={{ marginTop: 28, fontSize: 21 }}>
             Ibn Kathīr · d. 774 AH / 1373 CE · translated
           </Mono>
         </Card>
       </div>
       <div style={{ ...center, top: 1330, padding: "0 120px" }}>
-        <div style={{ fontFamily: F.serif, fontSize: 34, lineHeight: 1.4, color: C.dim, textAlign: "center", maxWidth: 840, ...focusIn(progress(f, 262, 24), 8, 8) }}>
+        <div style={{ fontFamily: F.serif, fontSize: 34, lineHeight: 1.4, color: C.dim, textAlign: "center", maxWidth: 840, ...focusIn(progress(f, 348, 24), 8, 8) }}>
           Another early view, from Qatāda, held that these words report what people claimed. Scholars differ.
         </div>
       </div>
