@@ -1,0 +1,9 @@
+{
+  "_note": "EP04 beat boundaries in frames @30fps. Read by Episode.tsx and scripts/sound_ep04.py.",
+  "hook": [0, 168],
+  "except": [150, 300],
+  "mirror": [282, 562],
+  "allah": [544, 724],
+  "story": [706, 1086],
+  "close": [1068, 1300]
+}
