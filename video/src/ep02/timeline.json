@@ -1,0 +1,10 @@
+{
+  "_note": "EP02 beat boundaries in frames @30fps. Read by Episode.tsx and scripts/sound_ep02.py.",
+  "hook": [0, 232],
+  "verse": [214, 520],
+  "asmai": [502, 790],
+  "decode": [772, 1384],
+  "heart": [1366, 1576],
+  "promise": [1558, 1960],
+  "outro": [1942, 2134]
+}
