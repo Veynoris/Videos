@@ -117,7 +117,8 @@ const STEP = 180;
 const ROT = 30;
 const DAY = 116;
 
-const sunAt = (local: number) => interpolate(local, [ROT, ROT + DAY], [90, 270], { ...CLAMP, easing: easeInOut });
+// The sun crosses the sky at a steady angular pace (no easing), so the meter reflects real exposure.
+const sunAt = (local: number) => interpolate(local, [ROT, ROT + DAY], [90, 270], CLAMP);
 
 // 4 — Ibn Kathir's test: rotate the cave through every direction and run a day of sun.
 export const Test: React.FC = () => {

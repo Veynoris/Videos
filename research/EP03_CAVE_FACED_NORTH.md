@@ -33,7 +33,7 @@ No people are drawn. "The open space where they lay" is a dotted outline only.
 | 1 | Hook | A cave on a compass, turning as if searching. "Nobody knows where this cave is." → "But one verse tells you which way it faces." |
 | 2 | Verse | "Read it slowly." Card 18:17 (opening), "on the right" in gold and "on the left" in silver |
 | 3 | Clues | Two clues: at sunrise it turns away, to the right; at sunset it passes them, on the left. "So which way did the entrance face?" |
-| 4 | Test | "Ibn Kathīr tested every direction." East / South / West: a day of sun runs, light pours in, and the meter fills (East ≈ 4.6 h, West ≈ 3.8 h). North: the sun turns right at sunrise and passes left at sunset; the meter stays at 0.0 h ("The sun stays out"). |
+| 4 | Test | "Ibn Kathīr tested every direction." East / South / West: a day of sun runs at a steady pace, light pours in, and the meter fills (East 3.2 h, South 6.3 h, West 3.2 h). North: the sun turns right at sunrise and passes left at sunset; the meter stays at 0.0 h ("The sun stays out"). |
 | 5 | Result | "The entrance faced north." Ibn Kathīr card (translated, abridged) |
 | 6 | Signs | "Another view (al-Qurṭubī): the sun was turned from them by a miracle." «ذَٰلِكَ مِنۡ ءَايَٰتِ ٱللَّهِ» "That was from the signs of Allah." |
 | 7 | Outro | "309 years. And the sun kept turning away." "Read al-Kahf 18:9–26 slowly." Quran Decoding |
