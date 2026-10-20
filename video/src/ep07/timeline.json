@@ -1,0 +1,17 @@
+{
+  "_note": "EP07 'One Ant' (27:18) beat boundaries in GLOBAL frames @30fps; cues are local to their beat. Read by Episode.tsx and scripts/sound_ep07.py.",
+  "hook": [0, 160],
+  "valley": [142, 420],
+  "speech": [402, 640],
+  "decode": [622, 1226],
+  "excuse": [1208, 1450],
+  "close": [1432, 1690],
+  "cue": {
+    "hookTen": 60,
+    "army": [0, 270], "valleyLine": 120,
+    "voice": 24, "hurry": [24, 200],
+    "prism": 10, "rows0": 70, "rowStep": 48,
+    "excuseAr": 120,
+    "smile": 14, "dua": 112, "loop": 186
+  }
+}

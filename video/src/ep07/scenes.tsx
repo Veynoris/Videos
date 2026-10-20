@@ -1,0 +1,191 @@
+import React from "react";
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { ArabicWords, BlurWords, Mono } from "../components/Text";
+import { StarMark } from "../components/Light";
+import { CLAMP, focusIn, focusOut, progress } from "../lib/anim";
+import { shine } from "../lib/shine";
+import { C, F } from "../lib/theme";
+import { hue, hueGlow, Prism, Q, ROW_STEP, ROW_Y0, T, TEN } from "./World";
+
+const center: React.CSSProperties = { position: "absolute", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center" };
+const GOLD = "#F3D38A";
+const GOLD_GLOW = "rgba(243,211,138,0.6)";
+
+const Line: React.FC<{ f: number; from: number; to: number; top: number; children: React.ReactNode }> = ({ f, from, to, top, children }) => {
+  const out = progress(f, to, 16);
+  return f < from - 2 || out >= 1 ? null : <div style={{ ...center, top, ...focusOut(out) }}>{children}</div>;
+};
+
+// The ant's sentence as one line; segment i can be lit in its own colour.
+export const Sentence: React.FC<{ size?: number; lit?: (i: number) => number; dim?: number }> = ({ size = 50, lit = () => 0, dim = 0 }) => (
+  <div dir="rtl" lang="ar" style={{ fontFamily: F.quran, fontSize: size, lineHeight: 1.9, textAlign: "center", color: C.ink, padding: "0 50px", opacity: 1 - dim * 0.6 }}>
+    {TEN.map((t, i) => {
+      const l = lit(i);
+      const joined = i === 0; // يَـٰٓ joins أَيُّهَا with no space
+      return (
+        <React.Fragment key={i}>
+          <span style={{ color: l > 0 ? hue(i) : undefined, textShadow: l > 0 ? `0 0 ${18 * l}px ${hueGlow(i)}` : undefined }}>{t.ar}</span>
+          {joined ? null : " "}
+        </React.Fragment>
+      );
+    })}
+  </div>
+);
+
+// ---------------------------------------------------------------- 1 · Hook (static claim on frame 0)
+export const Title: React.FC<{ sub?: number }> = ({ sub = 0 }) => (
+  <>
+    <div style={{ ...center, top: 176, flexDirection: "row", justifyContent: "center", gap: 22 }}>
+      <div style={{ width: 120, height: 1, background: `linear-gradient(90deg, transparent, ${C.sun})` }} />
+      <StarMark size={20} />
+      <Mono style={{ color: C.ink, letterSpacing: "0.4em" }}>An-Naml 27:18</Mono>
+      <StarMark size={20} />
+      <div style={{ width: 120, height: 1, background: `linear-gradient(90deg, ${C.sun}, transparent)` }} />
+    </div>
+    <div style={{ ...center, top: 222 }}>
+      <div style={{ fontFamily: F.serif, fontSize: 140, lineHeight: 1.05, ...shine(C.ink, 0.5) }}>One ant.</div>
+      <div style={{ fontFamily: F.serif, fontStyle: "italic", fontSize: 92, color: GOLD, textShadow: `0 0 30px ${GOLD_GLOW}` }}>One sentence.</div>
+    </div>
+    <div style={{ ...center, top: 560 }}>
+      <Sentence size={54} />
+    </div>
+    <div style={{ ...center, top: 800, ...focusIn(sub, 10, 10) }}>
+      <div style={{ fontFamily: F.serif, fontSize: 76, color: C.ink }}>
+        <span style={{ ...shine(GOLD, 0.5, GOLD_GLOW) }}>Ten things</span> in it.
+      </div>
+    </div>
+  </>
+);
+
+export const Hook: React.FC = () => {
+  const f = useCurrentFrame();
+  return (
+    <AbsoluteFill>
+      <Title sub={progress(f, Q.hookTen, 20)} />
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 2 · The valley
+export const Valley: React.FC = () => {
+  const f = useCurrentFrame();
+  return (
+    <AbsoluteFill>
+      <Line f={f} from={20} to={112} top={250}>
+        <BlurWords start={20} stagger={4} tokens={[{ t: "Sulaymān's army" }, { br: true, t: "" }, { t: "was marching —", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 82 }} />
+        <Mono p={progress(f, 34, 18)} style={{ marginTop: 22, fontSize: 20 }}>Jinn, men and birds, in rows · 27:17</Mono>
+      </Line>
+      <Line f={f} from={Q.valleyLine} to={300} top={250}>
+        <BlurWords start={Q.valleyLine} stagger={4} tokens={[{ t: "until they reached" }, { br: true, t: "" }, { t: "the valley of the ants.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 76 }} />
+        <ArabicWords start={Q.valleyLine + 24} stagger={5} size={56} tokens={[{ t: "حَتَّىٰٓ إِذَآ أَتَوۡاْ عَلَىٰ" }, { t: "وَادِ ٱلنَّمۡلِ", color: GOLD, glow: GOLD_GLOW }]} style={{ marginTop: 6 }} />
+      </Line>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 3 · She speaks
+export const Speech: React.FC = () => {
+  const f = useCurrentFrame();
+  return (
+    <AbsoluteFill>
+      <div style={{ ...center, top: 220 }}>
+        <BlurWords start={8} stagger={4} tokens={[{ t: "Then" }, { t: "one ant", italic: true, color: GOLD, glow: GOLD_GLOW }, { t: "spoke." }]} style={{ fontSize: 86 }} />
+      </div>
+      <div style={{ ...center, top: 380, ...focusIn(progress(f, 30, 24), 10, 12) }}>
+        <Sentence size={60} />
+      </div>
+      <div style={{ ...center, top: 630, padding: "0 80px" }}>
+        <BlurWords start={60} stagger={2} tokens={[{ t: "“O ants, enter your dwellings," }, { br: true, t: "" }, { t: "that you not be crushed by Sulaymān" }, { br: true, t: "" }, { t: "and his soldiers" }, { t: "while they perceive not.”", italic: true, color: GOLD }]} style={{ fontSize: 46, lineHeight: 1.3, fontStyle: "italic" }} />
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 4 · Decoded: ten things
+export const rowAt = (i: number) => Q.rows0 + i * Q.rowStep;
+
+export const Decode: React.FC = () => {
+  const f = useCurrentFrame();
+  const lit = (i: number) => progress(f, rowAt(i), 18);
+  const n = TEN.filter((_, i) => f >= rowAt(i)).length;
+  return (
+    <AbsoluteFill>
+      <div style={{ ...center, top: 168 }}>
+        <BlurWords start={4} stagger={3} tokens={[{ t: "Scholars of rhetoric" }, { t: "counted ten.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 56 }} />
+      </div>
+      <div style={{ ...center, top: 250 }}>
+        <Sentence size={39} lit={lit} />
+      </div>
+      <Prism f={f} appear={progress(f, Q.prism, 40)} lit={(i) => progress(f, rowAt(i) - 8, 16)} out={0} />
+      {TEN.map((t, i) => {
+        const p = lit(i);
+        return (
+          <div key={i} style={{ position: "absolute", left: 80, right: 80, top: ROW_Y0 + i * ROW_STEP, height: ROW_STEP - 12, display: "flex", alignItems: "center", gap: 22, padding: "0 26px", borderRadius: 16, background: "rgba(12,19,34,0.82)", border: `1.5px solid ${p > 0 ? hue(i) : "rgba(236,230,218,0.08)"}`, boxShadow: p > 0 ? `0 0 ${24 * p}px ${hueGlow(i)}` : undefined, opacity: 0.35 + 0.65 * p }}>
+            <div style={{ fontFamily: F.mono, fontSize: 22, color: p > 0 ? hue(i) : C.dim, width: 40 }}>{String(i + 1).padStart(2, "0")}</div>
+            <div style={{ flex: 1, display: "flex", alignItems: "baseline", gap: 14, ...focusIn(p, 6, 8) }}>
+              <div style={{ fontFamily: F.serif, fontSize: 38, color: C.ink, lineHeight: 1.1 }}>{t.en}</div>
+              <div dir="rtl" lang="ar" style={{ fontFamily: F.naskh, fontSize: 28, color: C.dim }}>{t.verb}</div>
+            </div>
+            <div dir="rtl" lang="ar" style={{ fontFamily: F.quran, fontSize: 44, color: p > 0 ? hue(i) : C.dim, textShadow: p > 0 ? `0 0 16px ${hueGlow(i)}` : undefined, whiteSpace: "nowrap" }}>{t.ar}</div>
+          </div>
+        );
+      })}
+      <div style={{ position: "absolute", top: 1574, left: 0, right: 0, textAlign: "center", fontFamily: F.mono, fontSize: 20, letterSpacing: "0.3em", color: C.dim, opacity: progress(f, Q.rows0, 20) }}>
+        {String(n).padStart(2, "0")} / 10 · Ṣafwat al-Tafāsīr on 27:18
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 5 · Warned — and excused
+export const Excuse: React.FC = () => {
+  const f = useCurrentFrame();
+  const pair = [
+    { i: 5, en: "She warned them about the army —" },
+    { i: 9, en: "and excused the army in the same breath." },
+  ];
+  return (
+    <AbsoluteFill>
+      <div style={{ ...center, top: 200 }}>
+        <BlurWords start={6} stagger={4} tokens={[{ t: "Look at" }, { t: "the last one.", italic: true, color: hue(9), glow: hueGlow(9) }]} style={{ fontSize: 82 }} />
+      </div>
+      {pair.map((c, k) => (
+        <div key={k} style={{ ...center, top: 420 + k * 230, ...focusIn(progress(f, 30 + k * 40, 22), 12, 12) }}>
+          <div dir="rtl" lang="ar" style={{ fontFamily: F.quran, fontSize: 84, color: hue(c.i), textShadow: `0 0 26px ${hueGlow(c.i)}`, lineHeight: 1.5 }}>{TEN[c.i].ar}</div>
+          <div style={{ fontFamily: F.serif, fontSize: 50, color: C.ink, fontStyle: k ? "italic" : undefined }}>{c.en}</div>
+        </div>
+      ))}
+      <div style={{ ...center, top: 960 }}>
+        <BlurWords start={Q.excuseAr} stagger={4} tokens={[{ t: "“…while they" }, { t: "perceive not.”", italic: true, color: hue(9), glow: hueGlow(9) }]} style={{ fontSize: 64 }} />
+        <Mono p={progress(f, Q.excuseAr + 20, 18)} style={{ marginTop: 18, fontSize: 20 }}>27:18</Mono>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------------------------------------------------------- 6 · Sulaymān smiled; loops onto frame 0
+export const Close: React.FC<{ dur: number }> = ({ dur }) => {
+  const f = useCurrentFrame();
+  const back = interpolate(f, [Q.loop, dur - 8], [0, 1], CLAMP);
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={{ ...focusOut(back) }}>
+        <Line f={f} from={Q.smile} to={Q.dua - 6} top={240}>
+          <BlurWords start={Q.smile} stagger={5} tokens={[{ t: "Sulaymān" }, { t: "smiled.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 108 }} />
+          <ArabicWords start={Q.smile + 20} stagger={5} size={64} tokens={[{ t: "فَتَبَسَّمَ", color: GOLD, glow: GOLD_GLOW }, { t: "ضَاحِكٗا مِّن قَوۡلِهَا" }]} style={{ marginTop: 10 }} />
+          <Mono p={progress(f, Q.smile + 30, 18)} style={{ fontSize: 20 }}>27:19</Mono>
+        </Line>
+        <Line f={f} from={Q.dua} to={dur} top={240}>
+          <Mono p={progress(f, Q.dua, 18)} style={{ color: C.sun }}>And he said</Mono>
+          <ArabicWords start={Q.dua + 6} stagger={5} size={66} tokens={[{ t: "رَبِّ أَوۡزِعۡنِيٓ أَنۡ" }, { t: "أَشۡكُرَ نِعۡمَتَكَ", color: GOLD, glow: GOLD_GLOW }]} style={{ marginTop: 8 }} />
+          <BlurWords start={Q.dua + 26} stagger={3} tokens={[{ t: "“My Lord, enable me to be grateful" }, { br: true, t: "" }, { t: "for Your favor.”", italic: true, color: GOLD }]} style={{ fontSize: 52, fontStyle: "italic" }} />
+        </Line>
+      </AbsoluteFill>
+      <AbsoluteFill style={{ opacity: back }}>
+        <Title sub={0} />
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+export { T };
