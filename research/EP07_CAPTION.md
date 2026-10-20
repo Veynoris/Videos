@@ -1,6 +1,8 @@
 # EP07 — caption
 
-One ant. One sentence. Ten things.
+An ant made a prophet smile. 🐜✨
+
+One sentence. Ten things.
 
 When Sulaymān's army reached the valley of the ants, one ant said:
 «يَـٰٓأَيُّهَا ٱلنَّمۡلُ ٱدۡخُلُواْ مَسَٰكِنَكُمۡ لَا يَحۡطِمَنَّكُمۡ سُلَيۡمَٰنُ وَجُنُودُهُۥ وَهُمۡ لَا يَشۡعُرُونَ»

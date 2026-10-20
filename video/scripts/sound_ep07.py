@@ -30,9 +30,14 @@ mix.add(0, np.stack([room, np.roll(room, 2400)]) * np.interp(t, [0, 1, dur - 2.5
 desert = np.interp(t, [0, secs(V), secs(V + 40), secs(J["speech"][1]), secs(D + 30), secs(CL), secs(CL + 60), dur - 0.6, dur], [0.5, 0.5, 1, 1, 0.3, 0.3, 0.5, 0.4, 0])
 mix.add(0, wind(dur, seed=71, lo=200, hi=700) * desert, -29)
 
-# Hook
+# Hook — her voice rippling on the sand from frame 0; the sentence; ten parts flash; "ten things".
 mix.add(0, thud(0.8, 2.2, 0.3), -18)
-mix.add(secs(Q["hookTen"]), swell(1.2, 260, 1600, 0.3), -28)
+mix.add(0, air_ring(1.6, -0.2, 0.2), -27)
+mix.add(secs(34), swell(1.2, 300, 1700, 0.35), -27)
+for i in range(10):
+    mix.add(secs(62 + i * 3), pebble(-0.6 + i * 0.13, seed=760 + i), -31)
+mix.add(secs(Q["hookTen"] + 26) - 0.5, reverse_swell(0.5), -24)
+mix.add(secs(Q["hookTen"] + 26), thud(0.7, 2.0, 0.3), -20)
 
 # Valley — the army: a distant rumble that swells as the rows come over the horizon.
 a0, a1 = Q["army"]

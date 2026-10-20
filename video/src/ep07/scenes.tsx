@@ -32,26 +32,45 @@ export const Sentence: React.FC<{ size?: number; lit?: (i: number) => number; di
   </div>
 );
 
-// ---------------------------------------------------------------- 1 · Hook (static claim on frame 0)
-export const Title: React.FC<{ sub?: number }> = ({ sub = 0 }) => (
+// ---------------------------------------------------------------- 1 · Hook
+// Frame 0: "An ant made a prophet smile." over her voice rippling on the sand (period divides the reel,
+// so the loop is seamless). Then her sentence appears and its ten parts flash in their prism colours.
+const RIPPLE = 65; // END (1690) = 26 × 65
+const Ripple: React.FC<{ g: number }> = ({ g }) => (
+  <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+    {[0, 1, 2].map((k) => {
+      const p = (((g + (k * RIPPLE) / 3) % RIPPLE) + RIPPLE) % RIPPLE / RIPPLE;
+      const r = 24 + p * 560;
+      return <ellipse key={k} cx={540} cy={1650} rx={r} ry={r * 0.28} fill="none" stroke="#F3D38A" strokeWidth={2.2} opacity={(1 - p) * 0.75} style={{ filter: "drop-shadow(0 0 6px rgba(243,211,138,0.8))" }} />;
+    })}
+    <circle cx={540} cy={1650} r={5} fill="#FFF1CC" style={{ filter: "drop-shadow(0 0 10px rgba(255,236,190,1))" }} />
+  </svg>
+);
+
+export const Title: React.FC<{ g: number; sentence?: number; lit?: (i: number) => number; sub?: number }> = ({ g, sentence = 0, lit, sub = 0 }) => (
   <>
+    <Ripple g={g} />
     <div style={{ ...center, top: 176, flexDirection: "row", justifyContent: "center", gap: 22 }}>
       <div style={{ width: 120, height: 1, background: `linear-gradient(90deg, transparent, ${C.sun})` }} />
       <StarMark size={20} />
-      <Mono style={{ color: C.ink, letterSpacing: "0.4em" }}>An-Naml 27:18</Mono>
+      <Mono style={{ color: C.ink, letterSpacing: "0.4em" }}>An-Naml 27:18–19</Mono>
       <StarMark size={20} />
       <div style={{ width: 120, height: 1, background: `linear-gradient(90deg, ${C.sun}, transparent)` }} />
     </div>
-    <div style={{ ...center, top: 222 }}>
-      <div style={{ fontFamily: F.serif, fontSize: 140, lineHeight: 1.05, ...shine(C.ink, 0.5) }}>One ant.</div>
-      <div style={{ fontFamily: F.serif, fontStyle: "italic", fontSize: 92, color: GOLD, textShadow: `0 0 30px ${GOLD_GLOW}` }}>One sentence.</div>
+    <div style={{ ...center, top: 226 }}>
+      <div style={{ fontFamily: F.serif, fontSize: 128, lineHeight: 1.04, ...shine(C.ink, 0.5) }}>An ant</div>
+      <div style={{ fontFamily: F.serif, fontStyle: "italic", fontSize: 92, lineHeight: 1.1, color: C.ink }}>
+        made a prophet <span style={{ color: GOLD, textShadow: `0 0 34px ${GOLD_GLOW}` }}>smile.</span>
+      </div>
     </div>
-    <div style={{ ...center, top: 560 }}>
-      <Sentence size={54} />
+    <div style={{ ...center, top: 600, ...focusIn(sentence, 12, 14) }}>
+      <Sentence size={54} lit={lit} />
     </div>
-    <div style={{ ...center, top: 800, ...focusIn(sub, 10, 10) }}>
-      <div style={{ fontFamily: F.serif, fontSize: 76, color: C.ink }}>
-        <span style={{ ...shine(GOLD, 0.5, GOLD_GLOW) }}>Ten things</span> in it.
+    <div style={{ ...center, top: 830, ...focusIn(sub, 10, 10) }}>
+      <div style={{ fontFamily: F.serif, fontSize: 62, color: C.ink, textAlign: "center", lineHeight: 1.2 }}>
+        Scholars found <span style={{ ...shine(GOLD, 0.5, GOLD_GLOW) }}>ten things</span>
+        <br />
+        <span style={{ fontStyle: "italic", color: C.dim }}>in what she said.</span>
       </div>
     </div>
   </>
@@ -59,9 +78,13 @@ export const Title: React.FC<{ sub?: number }> = ({ sub = 0 }) => (
 
 export const Hook: React.FC = () => {
   const f = useCurrentFrame();
+  const flash = (i: number) => {
+    const t = f - (62 + i * 3);
+    return t < 0 ? 0 : Math.max(0.35, Math.exp(-t / 30));
+  };
   return (
     <AbsoluteFill>
-      <Title sub={progress(f, Q.hookTen, 20)} />
+      <Title g={f} sentence={progress(f, 34, 22)} lit={flash} sub={progress(f, Q.hookTen + 26, 20)} />
     </AbsoluteFill>
   );
 };
@@ -182,7 +205,7 @@ export const Close: React.FC<{ dur: number }> = ({ dur }) => {
         </Line>
       </AbsoluteFill>
       <AbsoluteFill style={{ opacity: back }}>
-        <Title sub={0} />
+        <Title g={f + T.close[0]} />
       </AbsoluteFill>
     </AbsoluteFill>
   );

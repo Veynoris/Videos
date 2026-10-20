@@ -26,7 +26,7 @@ Runtime is 56.3 s (1690 frames). The claim is on screen from frame 0, and the re
 
 | # | Beat | On screen |
 |---|---|---|
-| 1 | Hook | `AN-NAML 27:18` · **One ant. *One sentence.*** · the sentence (frame 0) → "Ten things in it." |
+| 1 | Hook (v2) | `AN-NAML 27:18–19` · **An ant *made a prophet smile.*** over her voice rippling on the sand (frame 0) → her sentence appears; its ten parts flash in prism colours → "Scholars found *ten things* in what she said." |
 | 2 | Valley | Rows of light come over the dunes · "Sulaymān's army was marching —" (27:17) → "until they reached the valley of the ants." |
 | 3 | Speech | "Then one ant spoke." · the sentence + translation · a ring of light spreads; the trails hurry into their dwellings |
 | 4 | Decode | "Scholars of rhetoric counted ten." · a prism splits the sentence's beam into ten colours; each row lights its Qur'anic segment + English + the scholars' verb · counter 01→10 |

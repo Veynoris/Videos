@@ -11,8 +11,10 @@ export const Cover7: React.FC = () => (
   <AbsoluteFill>
     <Backdrop sun={0.5} moon={0.8} rays={0.8} />
     <div style={{ position: "absolute", top: 190, left: 0, right: 0, textAlign: "center", fontFamily: F.serif, lineHeight: 1.05 }}>
-      <div style={{ fontSize: 140, ...shine(C.ink, 0.5) }}>One ant.</div>
-      <div style={{ fontSize: 96, fontStyle: "italic", color: "#F3D38A", textShadow: "0 0 30px rgba(243,211,138,0.6)" }}>Ten things.</div>
+      <div style={{ fontSize: 128, ...shine(C.ink, 0.5) }}>An ant</div>
+      <div style={{ fontSize: 84, fontStyle: "italic", color: C.ink }}>
+        made a prophet <span style={{ color: "#F3D38A", textShadow: "0 0 30px rgba(243,211,138,0.6)" }}>smile.</span>
+      </div>
     </div>
     <Prism f={0} appear={1} lit={() => 1} out={0} />
     {TEN.map((t, i) => (
