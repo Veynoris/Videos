@@ -1,0 +1,75 @@
+{
+  "_note": "EP06 'One Seed' (2:261) beat boundaries and plant cues, in GLOBAL frames @30fps. Read by Episode.tsx, Plant.tsx and scripts/sound_ep06.py.",
+  "hook": [
+    0,
+    150
+  ],
+  "verse": [
+    132,
+    360
+  ],
+  "plant": [
+    342,
+    560
+  ],
+  "seven": [
+    542,
+    820
+  ],
+  "hundred": [
+    802,
+    1080
+  ],
+  "multiply": [
+    1062,
+    1330
+  ],
+  "wealth": [
+    1312,
+    1520
+  ],
+  "close": [
+    1502,
+    1700
+  ],
+  "seedFall": [
+    360,
+    400
+  ],
+  "roots": [
+    396,
+    470
+  ],
+  "sprout": [
+    440,
+    600
+  ],
+  "stalk": [
+    560,
+    640
+  ],
+  "ears": [
+    600,
+    22
+  ],
+  "grains": [
+    830,
+    190
+  ],
+  "pullback": [
+    1080,
+    1180
+  ],
+  "field": [
+    1110,
+    170
+  ],
+  "fadeOut": [
+    1588,
+    1628
+  ],
+  "camBack": [
+    1628,
+    1664
+  ]
+}
