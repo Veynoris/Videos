@@ -29,7 +29,7 @@ export const hueGlow = (i: number) => `hsla(${40 + i * 31}, 80%, 65%, 0.55)`;
 
 // Global layer weights, matched at frame 0 and the last frame so the reel loops.
 export const desertA = (f: number) =>
-  interpolate(f, [0, T.valley[0], T.valley[0] + 40, T.speech[1] - 20, T.decode[0] + 30, T.close[0], T.close[0] + 60, END], [0.55, 0.55, 1, 1, 0.22, 0.22, 0.55, 0.55], CLAMP);
+  interpolate(f, [0, T.valley[0], T.valley[0] + 40, T.speech[1] - 20, T.decode[0] + 30, T.close[0], T.close[0] + 60, END - 70, END], [0.95, 0.95, 1, 1, 0.22, 0.22, 0.6, 0.6, 0.95], CLAMP);
 
 const Dunes: React.FC<{ f: number }> = ({ f }) => {
   const pan = (f / END) * Math.PI * 2; // one full parallax cycle per reel (layers at 1×, 2×, 3×)
@@ -94,8 +94,13 @@ const Army: React.FC<{ f: number }> = ({ f }) => {
   const [a0] = Q.army;
   const t = T.valley[0];
   // the march stops dead when she speaks: progress freezes and the lights dim
-  const prog = interpolate(f, [t + a0, T.speech[0] + Q.voice], [0, 0.8], CLAMP);
-  const vis = interpolate(f, [t + a0, t + a0 + 30, T.speech[0] + Q.voice, T.speech[0] + Q.voice + 20, T.speech[1] - 30, T.speech[1]], [0, 1, 1, 0.35, 0.35, 0], CLAMP);
+  const edge = f < T.valley[0] || f > T.close[0]; // hook / loop point: a vast field of lights waiting on the horizon
+  const prog = edge ? 0.25 : interpolate(f, [t + a0, T.speech[0] + Q.voice], [0, 0.8], CLAMP);
+  const vis = Math.max(
+    interpolate(f, [t + a0, t + a0 + 30, T.speech[0] + Q.voice, T.speech[0] + Q.voice + 20, T.speech[1] - 30, T.speech[1]], [0, 1, 1, 0.35, 0.35, 0], CLAMP),
+    interpolate(f, [0, 22, 64, T.hook[1] - 30, T.hook[1]], [0, 0, 1, 1, 0], CLAMP), // revealed by the pull-back
+  );
+  const tp = edge ? (f / END) * Math.PI * 2 * 26 : Math.min(f, T.speech[0] + Q.voice) / 9;
   if (vis <= 0) return null;
   const pts: React.ReactNode[] = [];
   const HOR = 1200;
@@ -107,7 +112,7 @@ const Army: React.FC<{ f: number }> = ({ f }) => {
     const n = Math.floor(560 / sp);
     for (let j = -n; j <= n; j++) {
       const x = 540 + j * sp + (r % 2 ? sp / 2 : 0);
-      pts.push(<circle key={`${r}:${j}`} cx={x} cy={y} r={Math.max(0.9, 4 / z)} fill="#FFE2A8" opacity={vis * Math.min(1, 2.4 / z) * (0.6 + 0.4 * Math.sin(r * 3.1 + j * 1.7 + Math.min(f, T.speech[0] + Q.voice) / 9) ** 2)} />);
+      pts.push(<circle key={`${r}:${j}`} cx={x} cy={y} r={Math.max(0.9, 4 / z)} fill="#FFE2A8" opacity={vis * Math.min(1, 2.4 / z) * (0.6 + 0.4 * Math.sin(r * 3.1 + j * 1.7 + tp) ** 2)} />);
     }
   }
   return (
@@ -161,8 +166,30 @@ const Voice: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-// When she speaks, the camera dives toward the point where she stands.
-export const dive = (f: number) => interpolate(f, [T.speech[0] + 4, T.speech[0] + 44, T.speech[1] - 26, T.speech[1] + 10], [1, 1.45, 1.45, 1], { ...CLAMP, easing: easeInOut });
+// Her voice rippling on the sand: the hook and the loop point. Period divides the reel (1690 = 26 × 65).
+const RIPPLE = 65;
+const Ripple: React.FC<{ f: number }> = ({ f }) => {
+  const a = Math.max(interpolate(f, [0, T.hook[1] - 20, T.hook[1]], [1, 1, 0], CLAMP), interpolate(f, [END - 80, END], [0, 1], CLAMP));
+  if (a <= 0) return null;
+  return (
+    <g opacity={a}>
+      {[0, 1, 2].map((k) => {
+        const p = ((((f + (k * RIPPLE) / 3) % RIPPLE) + RIPPLE) % RIPPLE) / RIPPLE;
+        const r = 14 + p * 300;
+        return <ellipse key={k} cx={540} cy={1650} rx={r} ry={r * 0.28} fill="none" stroke="#F3D38A" strokeWidth={1.4} opacity={(1 - p) * 0.8} />;
+      })}
+      <circle cx={540} cy={1650} r={3.2} fill="#FFF1CC" style={{ filter: "drop-shadow(0 0 6px rgba(255,236,190,1))" }} />
+    </g>
+  );
+};
+
+// The camera: frame 0 starts close on her point of light and pulls back to reveal the army;
+// when she speaks it dives back toward her; the reel ends close on her again (the loop point).
+const ZOOM = 2.4;
+export const dive = (f: number) =>
+  interpolate(f, [T.speech[0] + 4, T.speech[0] + 44, T.speech[1] - 26, T.speech[1] + 10], [1, 1.45, 1.45, 1], { ...CLAMP, easing: easeInOut }) *
+  interpolate(f, [0, 6, 64], [ZOOM, ZOOM, 1], { ...CLAMP, easing: easeInOut }) *
+  interpolate(f, [END - 74, END - 1], [1, ZOOM], { ...CLAMP, easing: easeInOut });
 
 export const Desert: React.FC<{ f: number }> = ({ f }) => {
   const s0 = T.speech[0];
@@ -174,6 +201,7 @@ export const Desert: React.FC<{ f: number }> = ({ f }) => {
         <Dunes f={f} />
         <Army f={f} />
         <Trails f={f} hurry={hurry} a={1} />
+        <Ripple f={f} />
         <Voice f={f} />
       </g>
     </svg>
@@ -217,7 +245,7 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
         return (
           <g key={i}>
             <line x1={x1} y1={y1} x2={x1 + (x2 - x1) * l} y2={y1 + (y - y1) * l} stroke={hue(i)} strokeWidth={2.5} opacity={0.75} style={{ filter: `drop-shadow(0 0 6px ${hue(i)})` }} />
-            <Stream f={f + i * 7} x1={x1} y1={y1} x2={x2} y2={y} a={l >= 1 ? 0.9 : 0} id={`st${i}`} color={hue(i)} n={6} speed={46} />
+            <Stream f={f + i * 7} x1={x1} y1={y1} x2={x2} y2={y} a={l >= 1 ? 0.9 : 0} id={`st${i}`} color={hue(i)} n={3} speed={46} />
           </g>
         );
       })}

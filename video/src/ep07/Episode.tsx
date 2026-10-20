@@ -34,7 +34,7 @@ export const Episode7: React.FC = () => {
       <Backdrop sun={0.5} moon={moon} rays={rays} />
       <Dawn f={f} />
       <Desert f={f} />
-      <Motes f={f} period={845} intensity={motes} count={150} />
+      <Motes f={f} period={845} intensity={motes * 0.75} count={54} />
       <Scene from={T.hook[0]} to={T.hook[1]} drift={false}><Hook /></Scene>
       <Scene from={T.valley[0]} to={T.valley[1]}><Valley /></Scene>
       <Scene from={T.speech[0]} to={T.speech[1]}><Speech /></Scene>

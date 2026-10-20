@@ -30,14 +30,17 @@ mix.add(0, np.stack([room, np.roll(room, 2400)]) * np.interp(t, [0, 1, dur - 2.5
 desert = np.interp(t, [0, secs(V), secs(V + 40), secs(J["speech"][1]), secs(D + 30), secs(CL), secs(CL + 60), dur - 0.6, dur], [0.5, 0.5, 1, 1, 0.3, 0.3, 0.5, 0.4, 0])
 mix.add(0, wind(dur, seed=71, lo=200, hi=700) * desert, -29)
 
-# Hook — her voice rippling on the sand from frame 0; the sentence; ten parts flash; "ten things".
+# Hook — close on her voice rippling on the sand; the camera pulls back to reveal the moon and the
+# army's lights; her sentence is written in light; its ten parts flash; "ten things".
 mix.add(0, thud(0.8, 2.2, 0.3), -18)
 mix.add(0, air_ring(1.6, -0.2, 0.2), -27)
-mix.add(secs(34), swell(1.2, 300, 1700, 0.35), -27)
+mix.add(secs(6), whoosh(2.0, 0.0, 0.0, 120, 900, 0.5), -24)       # the pull-back
+mix.add(secs(30), swell(2.0, 200, 1200, 0.5), -27)                # the reveal
+mix.add(secs(40), sand(1.3, 0.6, -0.6, density=260, seed=790, bright=1.5), -29)  # written in light
 for i in range(10):
-    mix.add(secs(62 + i * 3), pebble(-0.6 + i * 0.13, seed=760 + i), -31)
-mix.add(secs(Q["hookTen"] + 26) - 0.5, reverse_swell(0.5), -24)
-mix.add(secs(Q["hookTen"] + 26), thud(0.7, 2.0, 0.3), -20)
+    mix.add(secs(78 + i * 2), pebble(-0.6 + i * 0.13, seed=760 + i), -32)
+mix.add(secs(98) - 0.5, reverse_swell(0.5), -24)
+mix.add(secs(98), thud(0.7, 2.0, 0.3), -20)
 
 # Valley — the army: a distant rumble that swells as the rows come over the horizon.
 a0, a1 = Q["army"]
@@ -82,7 +85,7 @@ mix.add(secs(CL + Q["dua"]), swell(2.2, 200, 1200, 0.5), -27)
 mix.add(secs(CL + Q["loop"]), swell(1.4, 160, 900, 0.7), -29)
 
 # Particle shimmers (fine, bright sand — never tonal) under the light bursts.
-for fr, d, g in ((62, 1.6, -30), (D + Q["prism"] + 16, 1.8, -29), (CL + Q["smile"], 4.0, -29), (E + 70, 1.4, -31)):
+for fr, d, g in ((D + Q["prism"] + 16, 1.8, -29), (CL + Q["smile"], 4.0, -29), (E + 70, 1.4, -31)):
     mix.add(secs(fr), sand(d, -0.7, 0.7, density=520, seed=780 + fr % 97, bright=1.4), g)
 
 master(mix, N, sys.argv[1])

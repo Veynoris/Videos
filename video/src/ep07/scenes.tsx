@@ -36,21 +36,8 @@ export const Sentence: React.FC<{ size?: number; lit?: (i: number) => number; di
 // ---------------------------------------------------------------- 1 · Hook
 // Frame 0: "An ant made a prophet smile." over her voice rippling on the sand (period divides the reel,
 // so the loop is seamless). Then her sentence appears and its ten parts flash in their prism colours.
-const RIPPLE = 65; // END (1690) = 26 × 65
-const Ripple: React.FC<{ g: number }> = ({ g }) => (
-  <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
-    {[0, 1, 2].map((k) => {
-      const p = (((g + (k * RIPPLE) / 3) % RIPPLE) + RIPPLE) % RIPPLE / RIPPLE;
-      const r = 24 + p * 560;
-      return <ellipse key={k} cx={540} cy={1650} rx={r} ry={r * 0.28} fill="none" stroke="#F3D38A" strokeWidth={2.2} opacity={(1 - p) * 0.75} style={{ filter: "drop-shadow(0 0 6px rgba(243,211,138,0.8))" }} />;
-    })}
-    <circle cx={540} cy={1650} r={5} fill="#FFF1CC" style={{ filter: "drop-shadow(0 0 10px rgba(255,236,190,1))" }} />
-  </svg>
-);
-
-export const Title: React.FC<{ g: number; sentence?: number; lit?: (i: number) => number; sub?: number }> = ({ g, sentence = 0, lit, sub = 0 }) => (
+export const Title: React.FC<{ sentence?: number; lit?: (i: number) => number; sub?: number }> = ({ sentence = 0, lit, sub = 0 }) => (
   <>
-    <Ripple g={g} />
     <div style={{ ...center, top: 176, flexDirection: "row", justifyContent: "center", gap: 22 }}>
       <div style={{ width: 120, height: 1, background: `linear-gradient(90deg, transparent, ${C.sun})` }} />
       <StarMark size={20} />
@@ -80,14 +67,16 @@ export const Title: React.FC<{ g: number; sentence?: number; lit?: (i: number) =
 export const Hook: React.FC = () => {
   const f = useCurrentFrame();
   const flash = (i: number) => {
-    const t = f - (62 + i * 3);
+    const t = f - (78 + i * 2);
     return t < 0 ? 0 : Math.max(0.35, Math.exp(-t / 30));
   };
   return (
     <AbsoluteFill>
-      <Title g={f} sentence={progress(f, 34, 22)} lit={flash} sub={progress(f, Q.hookTen + 26, 20)} />
-      <Burst t={f - 62} x={540} y={650} n={60} spread={460} dur={60} id="hb1" />
-      <Burst t={f - Q.hookTen - 26} x={540} y={890} n={40} spread={320} dur={50} id="hb2" size={3} />
+      <Title sub={progress(f, 98, 18)} />
+      <Written f={f} start={40} dur={36} top={600}>
+        <Sentence size={54} lit={flash} />
+      </Written>
+      <Burst t={f - 98} x={540} y={890} n={16} spread={260} dur={44} id="hb2" size={3} />
     </AbsoluteFill>
   );
 };
@@ -142,7 +131,7 @@ export const Speech: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <AbsoluteFill>
-      <Burst t={f - Q.voice} x={540} y={1650} n={70} spread={300} gravity={1} up={160} dur={70} color="#E9C99A" id="sb1" size={3} />
+      <Burst t={f - Q.voice} x={540} y={1650} n={30} spread={260} gravity={1} up={140} dur={60} color="#E9C99A" id="sb1" size={3} />
       <div style={{ ...center, top: 220 }}>
         <BlurWords start={8} stagger={4} tokens={[{ t: "Then" }, { t: "one ant", italic: true, color: GOLD, glow: GOLD_GLOW }, { t: "spoke." }]} style={{ fontSize: 86 }} />
       </div>
@@ -168,16 +157,21 @@ export const Decode: React.FC = () => {
       <div style={{ ...center, top: 168 }}>
         <BlurWords start={4} stagger={3} tokens={[{ t: "Scholars of rhetoric" }, { t: "counted ten.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 56 }} />
       </div>
-      <div style={{ ...center, top: 250 }}>
+      <div style={{ ...center, top: 250, ...focusIn(progress(f, 0, 20), 10, 10) }}>
         <Sentence size={39} lit={lit} />
       </div>
+      {/* the sentence's light condenses to one point, then drops into the crystal */}
+      <div style={{ position: "absolute", top: 336, left: 540 - 470 * (1 - progress(f, Q.prism - 2, 22)), width: 940 * (1 - progress(f, Q.prism - 2, 22)), height: 3, background: "linear-gradient(90deg, transparent, #FFF1CC, transparent)", boxShadow: "0 0 18px rgba(255,236,190,0.9)", opacity: progress(f, 0, 10) * (1 - progress(f, Q.prism + 18, 6)) }} />
       <Prism f={f} appear={progress(f, Q.prism, 40)} lit={(i) => progress(f, rowAt(i) - 8, 16)} out={0} />
       <Prism3D f={f} appear={progress(f, Q.prism, 40)} flash={Math.max(0, 1 - Math.abs(f - Q.prism - 34) / 20)} />
-      <Burst t={f - Q.prism - 16} x={PRISM[0]} y={PRISM[1]} n={70} spread={380} dur={60} color="#DCE6FF" id="pb" />
+      <Burst t={f - Q.prism - 16} x={PRISM[0]} y={PRISM[1]} n={26} spread={320} dur={50} color="#DCE6FF" id="pb" />
       {TEN.map((t, i) => {
         const p = lit(i);
+        const flip = progress(f, rowAt(i) - 10, 22);
+        const sweep = interpolate(f, [rowAt(i), rowAt(i) + 26], [0, 1], CLAMP);
         return (
-          <div key={i} style={{ position: "absolute", left: 80, right: 80, top: ROW_Y0 + i * ROW_STEP, height: ROW_STEP - 12, display: "flex", alignItems: "center", gap: 22, padding: "0 26px", borderRadius: 16, background: "rgba(12,19,34,0.82)", border: `1.5px solid ${p > 0 ? hue(i) : "rgba(236,230,218,0.08)"}`, boxShadow: p > 0 ? `0 0 ${24 * p}px ${hueGlow(i)}` : undefined, opacity: 0.35 + 0.65 * p }}>
+          <div key={i} style={{ position: "absolute", left: 80, right: 80, top: ROW_Y0 + i * ROW_STEP, height: ROW_STEP - 12, display: "flex", alignItems: "center", gap: 22, padding: "0 26px", borderRadius: 16, overflow: "hidden", background: "rgba(12,19,34,0.86)", border: `1.5px solid ${p > 0 ? hue(i) : "rgba(236,230,218,0.08)"}`, boxShadow: p > 0 ? `0 0 ${24 * p}px ${hueGlow(i)}` : undefined, opacity: flip, transform: `perspective(900px) rotateX(${(1 - flip) * -88}deg) translateY(${(1 - flip) * 30}px)`, transformOrigin: "50% 0%" }}>
+            {sweep > 0 && sweep < 1 ? <div style={{ position: "absolute", top: 0, bottom: 0, width: 220, left: `${100 - sweep * 130}%`, background: `linear-gradient(90deg, transparent, ${hueGlow(i)}, rgba(255,255,255,0.35), transparent)` }} /> : null}
             <div style={{ fontFamily: F.mono, fontSize: 22, color: p > 0 ? hue(i) : C.dim, width: 40 }}>{String(i + 1).padStart(2, "0")}</div>
             <div style={{ flex: 1, display: "flex", alignItems: "baseline", gap: 14, ...focusIn(p, 6, 8) }}>
               <div style={{ fontFamily: F.serif, fontSize: 38, color: C.ink, lineHeight: 1.1 }}>{t.en}</div>
@@ -188,7 +182,7 @@ export const Decode: React.FC = () => {
         );
       })}
       {TEN.map((_, i) => (
-        <Burst key={i} t={f - rowAt(i)} x={150} y={ROW_Y0 + i * ROW_STEP + 36} n={26} spread={170} dur={36} color={hue(i)} id={`rb${i}`} size={3.2} />
+        <Burst key={i} t={f - rowAt(i)} x={150} y={ROW_Y0 + i * ROW_STEP + 36} n={8} spread={140} dur={30} color={hue(i)} id={`rb${i}`} size={3.2} />
       ))}
       <div style={{ position: "absolute", top: 1574, left: 0, right: 0, textAlign: "center", fontFamily: F.mono, fontSize: 20, letterSpacing: "0.3em", color: C.dim, opacity: progress(f, Q.rows0, 20) }}>
         {String(n).padStart(2, "0")} / 10 · Ṣafwat al-Tafāsīr on 27:18
@@ -227,8 +221,8 @@ export const Excuse: React.FC = () => {
           <stop offset="1" stopColor={hue(9)} />
         </linearGradient>
       </svg>
-      <Burst t={f - 30} x={540} y={490} n={40} spread={300} dur={50} color={hue(5)} id="eb1" />
-      <Burst t={f - 70} x={540} y={720} n={50} spread={340} dur={56} color={hue(9)} id="eb2" />
+      <Burst t={f - 30} x={540} y={490} n={14} spread={260} dur={44} color={hue(5)} id="eb1" />
+      <Burst t={f - 70} x={540} y={720} n={16} spread={280} dur={48} color={hue(9)} id="eb2" />
       <div style={{ ...center, top: 960 }}>
         <BlurWords start={Q.excuseAr} stagger={4} tokens={[{ t: "“…while they" }, { t: "perceive not.”", italic: true, color: hue(9), glow: hueGlow(9) }]} style={{ fontSize: 64 }} />
         <Mono p={progress(f, Q.excuseAr + 20, 18)} style={{ marginTop: 18, fontSize: 20 }}>27:18</Mono>
@@ -243,8 +237,8 @@ export const Close: React.FC<{ dur: number }> = ({ dur }) => {
   const back = interpolate(f, [Q.loop, dur - 8], [0, 1], CLAMP);
   return (
     <AbsoluteFill>
-      <Rising t={f - Q.smile} dur={170} n={110} id="cr" />
-      <Burst t={f - Q.smile - 14} x={700} y={310} n={50} spread={360} dur={60} id="cb" />
+      <Rising t={f - Q.smile} dur={170} n={36} id="cr" />
+      <Burst t={f - Q.smile - 14} x={700} y={310} n={18} spread={300} dur={50} id="cb" />
       <AbsoluteFill style={{ ...focusOut(back) }}>
         <Line f={f} from={Q.smile} to={Q.dua - 6} top={240}>
           <BlurWords start={Q.smile} stagger={5} tokens={[{ t: "Sulaymān" }, { t: "smiled.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 108 }} />
@@ -258,7 +252,7 @@ export const Close: React.FC<{ dur: number }> = ({ dur }) => {
         </Line>
       </AbsoluteFill>
       <AbsoluteFill style={{ opacity: back }}>
-        <Title g={f + T.close[0]} />
+        <Title />
       </AbsoluteFill>
     </AbsoluteFill>
   );
