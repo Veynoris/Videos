@@ -75,4 +75,8 @@ mix.add(secs(CL + Q["smile"]), swell(1.6, 300, 1800, 0.35), -26)
 mix.add(secs(CL + Q["dua"]), swell(2.2, 200, 1200, 0.5), -27)
 mix.add(secs(CL + Q["loop"]), swell(1.4, 160, 900, 0.7), -29)
 
+# Particle shimmers (fine, bright sand — never tonal) under the light bursts.
+for fr, d, g in ((62, 1.6, -30), (D + Q["prism"] + 16, 1.8, -29), (CL + Q["smile"], 4.0, -29), (E + 70, 1.4, -31)):
+    mix.add(secs(fr), sand(d, -0.7, 0.7, density=520, seed=780 + fr % 97, bright=1.4), g)
+
 master(mix, N, sys.argv[1])

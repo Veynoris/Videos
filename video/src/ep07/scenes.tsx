@@ -2,10 +2,11 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { ArabicWords, BlurWords, Mono } from "../components/Text";
 import { StarMark } from "../components/Light";
+import { Burst, Rising } from "../components/Particles";
 import { CLAMP, focusIn, focusOut, progress } from "../lib/anim";
 import { shine } from "../lib/shine";
 import { C, F } from "../lib/theme";
-import { hue, hueGlow, Prism, Q, ROW_STEP, ROW_Y0, T, TEN } from "./World";
+import { hue, hueGlow, Prism, PRISM, Q, ROW_STEP, ROW_Y0, T, TEN } from "./World";
 
 const center: React.CSSProperties = { position: "absolute", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center" };
 const GOLD = "#F3D38A";
@@ -85,6 +86,8 @@ export const Hook: React.FC = () => {
   return (
     <AbsoluteFill>
       <Title g={f} sentence={progress(f, 34, 22)} lit={flash} sub={progress(f, Q.hookTen + 26, 20)} />
+      <Burst t={f - 62} x={540} y={650} n={60} spread={460} dur={60} id="hb1" />
+      <Burst t={f - Q.hookTen - 26} x={540} y={890} n={40} spread={320} dur={50} id="hb2" size={3} />
     </AbsoluteFill>
   );
 };
@@ -111,6 +114,7 @@ export const Speech: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <AbsoluteFill>
+      <Burst t={f - Q.voice} x={540} y={1650} n={70} spread={300} gravity={1} up={160} dur={70} color="#E9C99A" id="sb1" size={3} />
       <div style={{ ...center, top: 220 }}>
         <BlurWords start={8} stagger={4} tokens={[{ t: "Then" }, { t: "one ant", italic: true, color: GOLD, glow: GOLD_GLOW }, { t: "spoke." }]} style={{ fontSize: 86 }} />
       </div>
@@ -140,6 +144,7 @@ export const Decode: React.FC = () => {
         <Sentence size={39} lit={lit} />
       </div>
       <Prism f={f} appear={progress(f, Q.prism, 40)} lit={(i) => progress(f, rowAt(i) - 8, 16)} out={0} />
+      <Burst t={f - Q.prism - 16} x={PRISM[0]} y={PRISM[1]} n={70} spread={380} dur={60} color="#DCE6FF" id="pb" />
       {TEN.map((t, i) => {
         const p = lit(i);
         return (
@@ -153,6 +158,9 @@ export const Decode: React.FC = () => {
           </div>
         );
       })}
+      {TEN.map((_, i) => (
+        <Burst key={i} t={f - rowAt(i)} x={150} y={ROW_Y0 + i * ROW_STEP + 36} n={26} spread={170} dur={36} color={hue(i)} id={`rb${i}`} size={3.2} />
+      ))}
       <div style={{ position: "absolute", top: 1574, left: 0, right: 0, textAlign: "center", fontFamily: F.mono, fontSize: 20, letterSpacing: "0.3em", color: C.dim, opacity: progress(f, Q.rows0, 20) }}>
         {String(n).padStart(2, "0")} / 10 · Ṣafwat al-Tafāsīr on 27:18
       </div>
@@ -178,6 +186,8 @@ export const Excuse: React.FC = () => {
           <div style={{ fontFamily: F.serif, fontSize: 50, color: C.ink, fontStyle: k ? "italic" : undefined }}>{c.en}</div>
         </div>
       ))}
+      <Burst t={f - 30} x={540} y={490} n={40} spread={300} dur={50} color={hue(5)} id="eb1" />
+      <Burst t={f - 70} x={540} y={720} n={50} spread={340} dur={56} color={hue(9)} id="eb2" />
       <div style={{ ...center, top: 960 }}>
         <BlurWords start={Q.excuseAr} stagger={4} tokens={[{ t: "“…while they" }, { t: "perceive not.”", italic: true, color: hue(9), glow: hueGlow(9) }]} style={{ fontSize: 64 }} />
         <Mono p={progress(f, Q.excuseAr + 20, 18)} style={{ marginTop: 18, fontSize: 20 }}>27:18</Mono>
@@ -192,6 +202,8 @@ export const Close: React.FC<{ dur: number }> = ({ dur }) => {
   const back = interpolate(f, [Q.loop, dur - 8], [0, 1], CLAMP);
   return (
     <AbsoluteFill>
+      <Rising t={f - Q.smile} dur={170} n={110} id="cr" />
+      <Burst t={f - Q.smile - 14} x={700} y={310} n={50} spread={360} dur={60} id="cb" />
       <AbsoluteFill style={{ ...focusOut(back) }}>
         <Line f={f} from={Q.smile} to={Q.dua - 6} top={240}>
           <BlurWords start={Q.smile} stagger={5} tokens={[{ t: "Sulaymān" }, { t: "smiled.", italic: true, color: GOLD, glow: GOLD_GLOW }]} style={{ fontSize: 108 }} />

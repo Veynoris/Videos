@@ -1,6 +1,7 @@
 import React from "react";
 import { interpolate } from "remotion";
 import { CLAMP, easeInOut } from "../lib/anim";
+import { Stream } from "../components/Particles";
 import timeline from "./timeline.json";
 
 // EP07 (27:18): a moonlit valley, an army as advancing rows of light, ants as tiny trails of light,
@@ -77,7 +78,7 @@ const Army: React.FC<{ f: number }> = ({ f }) => {
   }
   return (
     <g>
-      <ellipse cx={540} cy={HOR + 30} rx={700} ry={70 + prog * 90} fill="rgba(255,214,150,0.10)" opacity={vis} style={{ filter: "blur(30px)" }} />
+      <ellipse cx={540} cy={HOR + 30} rx={700} ry={70 + prog * 90} fill="rgba(255,214,150,0.16)" opacity={vis} style={{ filter: "blur(36px)" }} />
       <g style={{ filter: "drop-shadow(0 0 5px rgba(255,220,150,0.8))" }}>{pts}</g>
     </g>
   );
@@ -158,6 +159,13 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
           <stop offset="1" stopColor="rgba(255,255,255,0.28)" />
         </linearGradient>
       </defs>
+      <radialGradient id="halo">
+        <stop offset="0" stopColor="rgba(255,250,235,0.55)" />
+        <stop offset="0.3" stopColor="rgba(200,170,255,0.22)" />
+        <stop offset="0.6" stopColor="rgba(120,220,200,0.10)" />
+        <stop offset="1" stopColor="rgba(0,0,0,0)" />
+      </radialGradient>
+      <circle cx={cx} cy={cy} r={260 + Math.sin(f / 20) * 14} fill="url(#halo)" opacity={appear} />
       {/* the sentence's single beam, from the text down into the prism */}
       <line x1={cx} y1={430} x2={cx} y2={430 + (cy - s - 430) * beamIn} stroke="#FFF1CC" strokeWidth={4} style={{ filter: "drop-shadow(0 0 10px rgba(255,236,190,0.95))" }} opacity={beamIn} />
       {/* ten beams out */}
@@ -168,7 +176,12 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
         const x2 = 120;
         const x1 = cx - 30 + i * 6;
         const y1 = cy + s * 0.6;
-        return <line key={i} x1={x1} y1={y1} x2={x1 + (x2 - x1) * l} y2={y1 + (y - y1) * l} stroke={hue(i)} strokeWidth={2.5} opacity={0.75} style={{ filter: `drop-shadow(0 0 6px ${hue(i)})` }} />;
+        return (
+          <g key={i}>
+            <line x1={x1} y1={y1} x2={x1 + (x2 - x1) * l} y2={y1 + (y - y1) * l} stroke={hue(i)} strokeWidth={2.5} opacity={0.75} style={{ filter: `drop-shadow(0 0 6px ${hue(i)})` }} />
+            <Stream f={f + i * 7} x1={x1} y1={y1} x2={x2} y2={y} a={l >= 1 ? 0.9 : 0} id={`st${i}`} color={hue(i)} n={6} speed={46} />
+          </g>
+        );
       })}
       <g opacity={appear} transform={`rotate(${Math.sin(f / 50) * 2},${cx},${cy})`}>
         <polygon points={tri} fill="url(#glass)" stroke="rgba(255,250,235,0.9)" strokeWidth={2} style={{ filter: "drop-shadow(0 0 18px rgba(200,220,255,0.6))" }} />
