@@ -6,7 +6,7 @@ import { Burst, Rising } from "../components/Particles";
 import { CLAMP, focusIn, focusOut, progress } from "../lib/anim";
 import { shine } from "../lib/shine";
 import { C, F } from "../lib/theme";
-import { hue, hueGlow, Prism, PRISM, Q, ROW_STEP, ROW_Y0, T, TEN } from "./World";
+import { hue, hueGlow, Prism, Prism3D, PRISM, Q, ROW_STEP, ROW_Y0, T, TEN } from "./World";
 
 const center: React.CSSProperties = { position: "absolute", left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center" };
 const GOLD = "#F3D38A";
@@ -110,6 +110,34 @@ export const Valley: React.FC = () => {
 };
 
 // ---------------------------------------------------------------- 3 · She speaks
+// Her words written in light: a glowing pen sweeps in reading direction (right to left), revealing the text.
+const Written: React.FC<{ f: number; start: number; dur: number; top: number; children: React.ReactNode }> = ({ f, start, dur, top, children }) => {
+  const p = interpolate(f, [start, start + dur], [0, 1], CLAMP);
+  const edge = p * 112 - 6; // % from the right
+  const mask = `linear-gradient(to left, black ${edge}%, rgba(0,0,0,0.35) ${edge + 3}%, transparent ${edge + 7}%)`;
+  const penX = 1020 - (p * 1.12 - 0.06) * 960;
+  const on = p > 0 && p < 1;
+  return (
+    <>
+      <div style={{ ...center, top, WebkitMaskImage: mask, maskImage: mask }}>{children}</div>
+      {on ? (
+        <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+          <radialGradient id="pen">
+            <stop offset="0" stopColor="#FFFDF4" />
+            <stop offset="0.3" stopColor="rgba(243,211,138,0.9)" />
+            <stop offset="1" stopColor="rgba(243,211,138,0)" />
+          </radialGradient>
+          <rect x={penX} y={top + 10} width={4} height={200} fill="rgba(255,246,220,0.8)" style={{ filter: "blur(3px)" }} />
+          <circle cx={penX} cy={top + 110} r={60} fill="url(#pen)" opacity={0.9} />
+          {Array.from({ length: 18 }, (_, i) => {
+            const a = ((f * 7 + i * 47) % 100) / 100;
+            return <circle key={i} cx={penX + a * 120 + Math.sin(i * 3 + f / 3) * 8} cy={top + 20 + ((i * 37) % 190) + a * 30} r={3 * (1 - a) + 1} fill="url(#pen)" opacity={1 - a} />;
+          })}
+        </svg>
+      ) : null}
+    </>
+  );
+};
 export const Speech: React.FC = () => {
   const f = useCurrentFrame();
   return (
@@ -118,9 +146,9 @@ export const Speech: React.FC = () => {
       <div style={{ ...center, top: 220 }}>
         <BlurWords start={8} stagger={4} tokens={[{ t: "Then" }, { t: "one ant", italic: true, color: GOLD, glow: GOLD_GLOW }, { t: "spoke." }]} style={{ fontSize: 86 }} />
       </div>
-      <div style={{ ...center, top: 380, ...focusIn(progress(f, 30, 24), 10, 12) }}>
+      <Written f={f} start={30} dur={70} top={380}>
         <Sentence size={60} />
-      </div>
+      </Written>
       <div style={{ ...center, top: 630, padding: "0 80px" }}>
         <BlurWords start={60} stagger={2} tokens={[{ t: "“O ants, enter your dwellings," }, { br: true, t: "" }, { t: "that you not be crushed by Sulaymān" }, { br: true, t: "" }, { t: "and his soldiers" }, { t: "while they perceive not.”", italic: true, color: GOLD }]} style={{ fontSize: 46, lineHeight: 1.3, fontStyle: "italic" }} />
       </div>
@@ -144,6 +172,7 @@ export const Decode: React.FC = () => {
         <Sentence size={39} lit={lit} />
       </div>
       <Prism f={f} appear={progress(f, Q.prism, 40)} lit={(i) => progress(f, rowAt(i) - 8, 16)} out={0} />
+      <Prism3D f={f} appear={progress(f, Q.prism, 40)} flash={Math.max(0, 1 - Math.abs(f - Q.prism - 34) / 20)} />
       <Burst t={f - Q.prism - 16} x={PRISM[0]} y={PRISM[1]} n={70} spread={380} dur={60} color="#DCE6FF" id="pb" />
       {TEN.map((t, i) => {
         const p = lit(i);
@@ -186,6 +215,18 @@ export const Excuse: React.FC = () => {
           <div style={{ fontFamily: F.serif, fontSize: 50, color: C.ink, fontStyle: k ? "italic" : undefined }}>{c.en}</div>
         </div>
       ))}
+      <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+        {[0, 1].map((k) => {
+          const a = progress(f, 30 + k * 40, 30);
+          const cy = 470 + k * 230;
+          return <ellipse key={k} cx={540} cy={cy} rx={260 + Math.sin(f / 25 + k) * 8} ry={58} fill="none" stroke={hue(k ? 9 : 5)} strokeWidth={1.6} opacity={a * 0.6} strokeDasharray="6 10" strokeDashoffset={-f * (k ? -1.2 : 1.2)} transform={`rotate(${k ? 4 : -4},540,${cy})`} />;
+        })}
+        <path d="M800,470 C990,520 990,650 800,700" fill="none" stroke="url(#arcG)" strokeWidth={3} pathLength={1} strokeDasharray={`${progress(f, 80, 34)} 1`} style={{ filter: "drop-shadow(0 0 8px rgba(255,255,255,0.7))" }} />
+        <linearGradient id="arcG" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={hue(5)} />
+          <stop offset="1" stopColor={hue(9)} />
+        </linearGradient>
+      </svg>
       <Burst t={f - 30} x={540} y={490} n={40} spread={300} dur={50} color={hue(5)} id="eb1" />
       <Burst t={f - 70} x={540} y={720} n={50} spread={340} dur={56} color={hue(9)} id="eb2" />
       <div style={{ ...center, top: 960 }}>

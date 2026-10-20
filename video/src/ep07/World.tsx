@@ -32,6 +32,7 @@ export const desertA = (f: number) =>
   interpolate(f, [0, T.valley[0], T.valley[0] + 40, T.speech[1] - 20, T.decode[0] + 30, T.close[0], T.close[0] + 60, END], [0.55, 0.55, 1, 1, 0.22, 0.22, 0.55, 0.55], CLAMP);
 
 const Dunes: React.FC<{ f: number }> = ({ f }) => {
+  const pan = (f / END) * Math.PI * 2; // one full parallax cycle per reel (layers at 1×, 2×, 3×)
   const layer = (y: number, amp: number, k: number, ph: number, c1: string, c2: string, id: string) => {
     let d = `M-20,${y}`;
     for (let x = -20; x <= 1100; x += 20) d += ` L${x},${(y + Math.sin(x / k + ph) * amp + Math.sin(x / (k * 0.37) + ph * 2) * amp * 0.3).toFixed(1)}`;
@@ -49,19 +50,52 @@ const Dunes: React.FC<{ f: number }> = ({ f }) => {
   };
   return (
     <g>
-      {layer(1260, 26, 160, 0.4 + f * 0.0004, "#2A2A33", "#12131A", "d1")}
-      {layer(1420, 34, 210, 1.7, "#3A3328", "#15130F", "d2")}
-      {layer(1580, 40, 260, 3.1, "#4A3E2C", "#14110C", "d3")}
+      {layer(1260, 26, 160, 0.4 + pan * 1, "#2A2A33", "#12131A", "d1")}
+      {layer(1420, 34, 210, 1.7 + pan * 2, "#3A3328", "#15130F", "d2")}
+      {layer(1580, 40, 260, 3.1 + pan * 3, "#4A3E2C", "#14110C", "d3")}
+    </g>
+  );
+};
+
+// A great moon: peeking at frame 0, rising through the valley, setting at dawn (back to frame 0).
+export const moonY = (f: number) =>
+  interpolate(f, [0, T.valley[0], T.speech[1], T.close[0] + 20, END - 30], [1160, 1160, 960, 960, 1160], { ...CLAMP, easing: easeInOut });
+const Moon: React.FC<{ f: number }> = ({ f }) => {
+  const y = moonY(f);
+  const x = 770;
+  const a = interpolate(f, [T.decode[0], T.decode[0] + 30, T.close[0], T.close[0] + 40], [1, 0, 0, 1], CLAMP);
+  if (a <= 0) return null;
+  return (
+    <g opacity={a}>
+      <radialGradient id="moonGlow">
+        <stop offset="0" stopColor="rgba(250,240,215,0.5)" />
+        <stop offset="0.35" stopColor="rgba(220,210,190,0.12)" />
+        <stop offset="1" stopColor="rgba(0,0,0,0)" />
+      </radialGradient>
+      <radialGradient id="moonFace" cx="0.42" cy="0.38" r="0.7">
+        <stop offset="0" stopColor="#FBF5E6" />
+        <stop offset="0.7" stopColor="#E3D8BE" />
+        <stop offset="1" stopColor="#B9AE95" />
+      </radialGradient>
+      <circle cx={x} cy={y} r={520} fill="url(#moonGlow)" />
+      {[1.25, 1.55, 1.95].map((k, i) => (
+        <circle key={i} cx={x} cy={y} r={150 * k + Math.sin(f / 30 + i) * 4} fill="none" stroke="rgba(250,240,215,0.12)" strokeWidth={1.5} />
+      ))}
+      <circle cx={x} cy={y} r={150} fill="url(#moonFace)" />
+      {[[-40, -30, 26], [35, 20, 18], [-10, 55, 14], [50, -50, 10], [-60, 30, 9]].map(([dx, dy, r], i) => (
+        <circle key={i} cx={x + dx} cy={y + dy} r={r} fill="rgba(150,135,110,0.18)" />
+      ))}
     </g>
   );
 };
 
 // Sulayman's army: rows of light advancing over the horizon (27:17 «فَهُمۡ يُوزَعُونَ», marching in ordered rows).
 const Army: React.FC<{ f: number }> = ({ f }) => {
-  const [a0, a1] = Q.army;
+  const [a0] = Q.army;
   const t = T.valley[0];
-  const prog = interpolate(f, [t + a0, t + a1, T.speech[1]], [0, 0.8, 1], CLAMP);
-  const vis = interpolate(f, [t + a0, t + a0 + 30, T.speech[1] - 30, T.speech[1]], [0, 1, 1, 0], CLAMP);
+  // the march stops dead when she speaks: progress freezes and the lights dim
+  const prog = interpolate(f, [t + a0, T.speech[0] + Q.voice], [0, 0.8], CLAMP);
+  const vis = interpolate(f, [t + a0, t + a0 + 30, T.speech[0] + Q.voice, T.speech[0] + Q.voice + 20, T.speech[1] - 30, T.speech[1]], [0, 1, 1, 0.35, 0.35, 0], CLAMP);
   if (vis <= 0) return null;
   const pts: React.ReactNode[] = [];
   const HOR = 1200;
@@ -73,7 +107,7 @@ const Army: React.FC<{ f: number }> = ({ f }) => {
     const n = Math.floor(560 / sp);
     for (let j = -n; j <= n; j++) {
       const x = 540 + j * sp + (r % 2 ? sp / 2 : 0);
-      pts.push(<circle key={`${r}:${j}`} cx={x} cy={y} r={Math.max(0.9, 4 / z)} fill="#FFE2A8" opacity={vis * Math.min(1, 2.4 / z) * (0.6 + 0.4 * Math.sin(r * 3.1 + j * 1.7 + f / 9) ** 2)} />);
+      pts.push(<circle key={`${r}:${j}`} cx={x} cy={y} r={Math.max(0.9, 4 / z)} fill="#FFE2A8" opacity={vis * Math.min(1, 2.4 / z) * (0.6 + 0.4 * Math.sin(r * 3.1 + j * 1.7 + Math.min(f, T.speech[0] + Q.voice) / 9) ** 2)} />);
     }
   }
   return (
@@ -127,15 +161,21 @@ const Voice: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
+// When she speaks, the camera dives toward the point where she stands.
+export const dive = (f: number) => interpolate(f, [T.speech[0] + 4, T.speech[0] + 44, T.speech[1] - 26, T.speech[1] + 10], [1, 1.45, 1.45, 1], { ...CLAMP, easing: easeInOut });
+
 export const Desert: React.FC<{ f: number }> = ({ f }) => {
   const s0 = T.speech[0];
   const hurry = interpolate(f, [s0 + Q.hurry[0], s0 + Q.hurry[1]], [0, 1], { ...CLAMP, easing: easeInOut }) * interpolate(f, [T.excuse[1], T.close[0] + 120], [1, 0], CLAMP);
   return (
     <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: desertA(f) }}>
-      <Dunes f={f} />
-      <Army f={f} />
-      <Trails f={f} hurry={hurry} a={1} />
-      <Voice f={f} />
+      <Moon f={f} />
+      <g transform={`translate(540,1650) scale(${dive(f)}) translate(-540,-1650)`}>
+        <Dunes f={f} />
+        <Army f={f} />
+        <Trails f={f} hurry={hurry} a={1} />
+        <Voice f={f} />
+      </g>
     </svg>
   );
 };
@@ -147,8 +187,6 @@ export const PRISM: [number, number] = [540, 560];
 
 export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => number; out: number }> = ({ f, appear, lit, out }) => {
   const [cx, cy] = PRISM;
-  const s = 70;
-  const tri = `${cx},${cy - s} ${cx + s * 0.95},${cy + s * 0.6} ${cx - s * 0.95},${cy + s * 0.6}`;
   const beamIn = appear;
   return (
     <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: 1 - out }}>
@@ -167,7 +205,7 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
       </radialGradient>
       <circle cx={cx} cy={cy} r={260 + Math.sin(f / 20) * 14} fill="url(#halo)" opacity={appear} />
       {/* the sentence's single beam, from the text down into the prism */}
-      <line x1={cx} y1={430} x2={cx} y2={430 + (cy - s - 430) * beamIn} stroke="#FFF1CC" strokeWidth={4} style={{ filter: "drop-shadow(0 0 10px rgba(255,236,190,0.95))" }} opacity={beamIn} />
+      <line x1={cx} y1={430} x2={cx} y2={430 + (cy - 76 - 430) * beamIn} stroke="#FFF1CC" strokeWidth={4} style={{ filter: "drop-shadow(0 0 10px rgba(255,236,190,0.95))" }} opacity={beamIn} />
       {/* ten beams out */}
       {TEN.map((_, i) => {
         const l = lit(i);
@@ -175,7 +213,7 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
         const y = ROW_Y0 + i * ROW_STEP + 30;
         const x2 = 120;
         const x1 = cx - 30 + i * 6;
-        const y1 = cy + s * 0.6;
+        const y1 = cy + 72;
         return (
           <g key={i}>
             <line x1={x1} y1={y1} x2={x1 + (x2 - x1) * l} y2={y1 + (y - y1) * l} stroke={hue(i)} strokeWidth={2.5} opacity={0.75} style={{ filter: `drop-shadow(0 0 6px ${hue(i)})` }} />
@@ -183,10 +221,28 @@ export const Prism: React.FC<{ f: number; appear: number; lit: (i: number) => nu
           </g>
         );
       })}
-      <g opacity={appear} transform={`rotate(${Math.sin(f / 50) * 2},${cx},${cy})`}>
-        <polygon points={tri} fill="url(#glass)" stroke="rgba(255,250,235,0.9)" strokeWidth={2} style={{ filter: "drop-shadow(0 0 18px rgba(200,220,255,0.6))" }} />
-        <polygon points={`${cx},${cy - s + 18} ${cx + s * 0.6},${cy + s * 0.42} ${cx - s * 0.6},${cy + s * 0.42}`} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={1} />
-      </g>
     </svg>
+  );
+};
+
+// A real 3D glass prism: three refracting faces turning slowly in space.
+export const Prism3D: React.FC<{ f: number; appear: number; flash: number }> = ({ f, appear, flash }) => {
+  const [cx, cy] = PRISM;
+  const w = 128;
+  const h = 150;
+  const apothem = w / (2 * Math.sqrt(3));
+  const spin = f * 0.9 + (1 - appear) * 120;
+  return (
+    <div style={{ position: "absolute", left: cx - w / 2, top: cy - h / 2, width: w, height: h, perspective: 900, opacity: appear, transform: `scale(${0.6 + 0.4 * appear})` }}>
+      <div style={{ position: "absolute", inset: 0, transformStyle: "preserve-3d", transform: `rotateX(-14deg) rotateY(${spin}deg)` }}>
+        {[0, 1, 2].map((k) => {
+          const face = ((spin + k * 120) % 360 + 360) % 360;
+          const lightness = 0.5 + 0.5 * Math.cos((face * Math.PI) / 180);
+          return (
+            <div key={k} style={{ position: "absolute", inset: 0, transform: `rotateY(${k * 120}deg) translateZ(${apothem}px)`, background: `linear-gradient(${100 + k * 40}deg, rgba(255,255,255,${0.1 + 0.3 * lightness}), rgba(170,200,255,0.10) 45%, rgba(255,210,240,${0.08 + 0.2 * lightness}) 70%, rgba(255,255,255,${0.15 + 0.25 * lightness}))`, border: "1.5px solid rgba(255,250,235,0.85)", boxShadow: `0 0 ${20 + flash * 50}px rgba(220,230,255,${0.35 + flash * 0.5}), inset 0 0 20px rgba(255,255,255,0.25)`, backfaceVisibility: "visible" }} />
+          );
+        })}
+      </div>
+    </div>
   );
 };
