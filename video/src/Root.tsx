@@ -13,6 +13,8 @@ import { DURATION6, Episode6 } from "./ep06/Episode";
 import { Cover6 } from "./ep06/Cover";
 import { DURATION7, Episode7 } from "./ep07/Episode";
 import { Cover7 } from "./ep07/Cover";
+import { DURATION8, Episode8 } from "./ep08/Episode";
+import { Cover8 } from "./ep08/Cover";
 import { FPS, H, W } from "./lib/theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -21,6 +23,8 @@ export const RemotionRoot: React.FC = () => (
     <Still id="ReelCover" component={Cover} width={W} height={H} />
     <Still id="Ep02Cover" component={Cover2} width={W} height={H} />
     <Still id="Ep03Cover" component={Cover3} width={W} height={H} />
+    <Composition id="TheDarknesses" component={Episode8} durationInFrames={DURATION8} fps={FPS} width={W} height={H} />
+    <Still id="Ep08Cover" component={Cover8} width={W} height={H} />
     <Composition id="OneAnt" component={Episode7} durationInFrames={DURATION7} fps={FPS} width={W} height={H} />
     <Still id="Ep07Cover" component={Cover7} width={W} height={H} />
     <Composition id="OneSeed" component={Episode6} durationInFrames={DURATION6} fps={FPS} width={W} height={H} />

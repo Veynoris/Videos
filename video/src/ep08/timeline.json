@@ -1,0 +1,17 @@
+{
+  "_note": "EP08 'The Darknesses' (21:87–88) beat boundaries in GLOBAL frames @30fps; cues are local to their beat. Read by Episode.tsx, World.tsx and scripts/sound_ep08.py.",
+  "hook": [0, 176],
+  "fall": [158, 500],
+  "dark": [482, 800],
+  "dua": [782, 1170],
+  "answer": [1152, 1440],
+  "close": [1422, 1680],
+  "cue": {
+    "hookDua": 30, "hookOut": 84,
+    "lines": [20, 90, 160, 230], "swallow": 250,
+    "count": [20, 110, 200],
+    "call": 10, "phrases": [64, 160, 256],
+    "rise": [10, 120], "save": 150,
+    "hadith": 12, "down": 200
+  }
+}
